@@ -8,15 +8,15 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.EditorInput;
 
 // This line is not mandatory, but improves loading performances
-[assembly: ExtensionApplication(typeof(AutoCAD_CSharp_plug_in2.MyPlugin))]
+[assembly: ExtensionApplication(typeof(AutoCADPythonClient.PythonClient))]
 
-namespace AutoCAD_CSharp_plug_in2
+namespace AutoCADPythonClient
 {
 
     // This class is instantiated by AutoCAD once and kept alive for the 
     // duration of the session. If you don't do any one time initialization 
     // then you should remove this class.
-    public class MyPlugin : IExtensionApplication
+    public class PythonClient : IExtensionApplication
     {
 
         void IExtensionApplication.Initialize()

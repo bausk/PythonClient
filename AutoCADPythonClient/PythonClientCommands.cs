@@ -8,16 +8,16 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.EditorInput;
 
 // This line is not mandatory, but improves loading performances
-[assembly: CommandClass(typeof(AutoCAD_CSharp_plug_in2.MyCommands))]
+[assembly: CommandClass(typeof(AutoCADPythonClient.PythonCommands))]
 
-namespace AutoCAD_CSharp_plug_in2
+namespace AutoCADPythonClient
 {
 
     // This class is instantiated by AutoCAD for each document when
     // a command is called by the user the first time in the context
     // of a given document. In other words, non static data in this class
     // is implicitly per-document!
-    public class MyCommands
+    public class PythonCommands
     {
         // The CommandMethod attribute can be applied to any public  member 
         // function of any public class.
