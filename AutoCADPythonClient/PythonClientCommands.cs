@@ -37,6 +37,75 @@ namespace AutoCADPythonClient
 
         }
 
+
+        [CommandMethod("PFT", CommandFlags.UsePickSet |
+                                  CommandFlags.Redraw |
+                                  CommandFlags.Modal)
+            ]
+        static public void PickFirstTest()
+        {
+            Document doc =
+              Application.DocumentManager.MdiActiveDocument;
+            Editor ed = doc.Editor;
+            try
+            {
+                PromptSelectionResult selectionRes =
+                  ed.SelectImplied();
+                // If there's no pickfirst set available...
+                if (selectionRes.Status == PromptStatus.Error)
+                {
+                    // ... ask the user to select entities
+                    PromptSelectionOptions selectionOpts =
+                      new PromptSelectionOptions();
+                    selectionOpts.MessageForAdding =
+                      "\nSelect objects to list: ";
+                    selectionRes =
+                      ed.GetSelection(selectionOpts);
+                }
+                else
+                {
+                    // If there was a pickfirst set, clear it
+                    ed.SetImpliedSelection(new ObjectId[0]);
+                }
+                // If the user has not cancelled...
+                if (selectionRes.Status == PromptStatus.OK)
+                {
+                    // ... take the selected objects one by one
+                    Transaction tr =
+                      doc.TransactionManager.StartTransaction();
+                    try
+                    {
+                        ObjectId[] objIds = selectionRes.Value.GetObjectIds();
+                        foreach (ObjectId objId in objIds)
+                        {
+                            Entity ent =
+                              (Entity)tr.GetObject(objId, OpenMode.ForRead);
+                            // In this simple case, just dump their properties
+                            // to the command-line using list
+                            ent.List();
+                            ent.Dispose();
+                        }
+                        // Although no changes were made, use Commit()
+                        // as this is much quicker than rolling back
+                        tr.Commit();
+                    }
+                    catch (Autodesk.AutoCAD.Runtime.Exception ex)
+                    {
+                        ed.WriteMessage(ex.Message);
+                        tr.Abort();
+                    }
+                }
+            }
+            catch (Autodesk.AutoCAD.Runtime.Exception ex)
+            {
+                ed.WriteMessage(ex.Message);
+            }
+        }
+
+
+
+
+
         // Modal Command with pickfirst selection
         [CommandMethod("MyGroup", "MyPickFirst", "MyPickFirstLocal", CommandFlags.Modal | CommandFlags.UsePickSet)]
         public void MyPickFirst() // This method can have any name
@@ -46,6 +115,7 @@ namespace AutoCADPythonClient
             {
                 // There are selected entities
                 // Put your command using pickfirst set code here
+
             }
             else
             {
