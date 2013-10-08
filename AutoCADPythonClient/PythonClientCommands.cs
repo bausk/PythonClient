@@ -1,6 +1,8 @@
 ﻿// (C) Copyright 2013 by Microsoft 
 //
 using System;
+using System.Text;
+using System.Collections.Generic;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -20,21 +22,15 @@ namespace AutoCADPythonClient
     // is implicitly per-document!
     public class PythonCommands
     {
-        // The CommandMethod attribute can be applied to any public  member 
-        // function of any public class.
-        // The function should take no arguments and return nothing.
-        // If the method is an intance member then the enclosing class is 
-        // intantiated for each document. If the member is a static member then
-        // the enclosing class is NOT intantiated.
-        //
-        // NOTE: CommandMethod has overloads where you can provide helpid and
-        // context menu.
 
-        //Test messaging command
+        ObjectIdCollection _ids = null;
+        //SortedList<string, string> _blockNames = null;
+
+        //Selection Set example
         [CommandMethod("STEST", CommandFlags.UsePickSet |
                                   CommandFlags.Redraw |
                                   CommandFlags.Modal)
-            ]
+        ]
         static public void ZeroMQTest()
         {
             Document doc =
@@ -75,6 +71,22 @@ namespace AutoCADPythonClient
                               (Entity)tr.GetObject(objId, OpenMode.ForRead);
                             // In this simple case, just dump their properties
                             // to the command-line using list
+                            String message = ent.Layer;
+                            using (ZmqContext context = ZmqContext.Create())
+                            using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
+                            {
+                                client.Connect("tcp://localhost:5556");
+                                string request = message;
+                                for (int requestNum = 1; requestNum < 3; requestNum++)
+                                {
+                                    ed.WriteMessage("\nSending layer information to Python try {0}...\n", requestNum);
+                                    client.SendTimeout = new TimeSpan(0,0,50);
+                                    client.ReceiveTimeout = new TimeSpan(0,0,50);
+                                    client.Send(request, Encoding.Unicode); 
+                                    string reply = client.Receive(Encoding.Unicode);
+                                    ed.WriteMessage("\nReceived message {0} from Python: '{1}'\n", requestNum, reply);
+                                }
+                            }
                             ent.List();
                             ent.Dispose();
                         }
@@ -95,7 +107,69 @@ namespace AutoCADPythonClient
             }
         }
 
+        //OK let's try an event handler
+        //http://through-the-interface.typepad.com/through_the_interface/2010/02/watching-for-deletion-of-a-specific-autocad-block-using-net.html
+        //
+        [CommandMethod("LOGENT")]
+        public void SetEventHandler()
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            Database db = doc.Database;
+            Editor ed = doc.Editor;
 
+            // Ask for the name of a block to watch for
+
+            PromptStringOptions pso =
+              new PromptStringOptions(
+                "\nEnter entity type to log: "
+              );
+            pso.AllowSpaces = false;
+
+            PromptResult pr = ed.GetString(pso);
+
+            if (pr.Status != PromptStatus.OK)
+                return;
+
+            string entityType = pr.StringResult.ToUpper();
+
+
+
+        }
+
+        private void OnCommandEnded(object sender, CommandEventArgs e)
+        {
+            // Start an outer transaction that we pass to our testing
+            // function, avoiding the overhead of multiple transactions
+
+            Document doc = sender as Document;
+            if (_ids != null)
+            {
+                Transaction tr =
+                  doc.Database.TransactionManager.StartTransaction();
+                using (tr)
+                {
+                    // Test each object, in turn
+
+                    foreach (ObjectId id in _ids)
+                    {
+                        // The test function is responsible for presenting the
+                        // user with the information: this could be returned to
+                        // this function, if needed
+
+                        //TestObjectAndShowMessage(doc, tr, id);
+                    }
+
+                    // Even though we're only reading, we commit the
+                    // transaction, as this is more efficient
+
+                    tr.Commit();
+                }
+
+                // Now we clear our list of entities
+
+                _ids.Clear();
+            }
+        }
 
         //THIS IS A REFERENCE PFT COMMAND OVER WHICH WE BUILD THE EXAMPLE ZEROMQ CLIENT
         [CommandMethod("PFT", CommandFlags.UsePickSet |
