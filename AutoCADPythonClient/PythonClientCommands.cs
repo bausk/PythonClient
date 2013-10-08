@@ -126,7 +126,6 @@ namespace AutoCADPythonClient
             pso.AllowSpaces = false;
 
             PromptResult pr = ed.GetString(pso);
-
             if (pr.Status != PromptStatus.OK)
                 return;
 
