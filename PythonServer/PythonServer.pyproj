@@ -12,6 +12,11 @@
     <OutputPath>.</OutputPath>
     <Name>PythonServer</Name>
     <RootNamespace>PythonServer</RootNamespace>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <CommandLineArguments>111</CommandLineArguments>
+    <InterpreterPath />
+    <InterpreterArguments />
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
