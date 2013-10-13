@@ -151,17 +151,65 @@ namespace AutoCADPythonClient
             return new string(chars);
         }
 
-
         [CommandMethod("REPENT")]
+        public void SetEventHandler()
+        {
+            //Document doc = Application.DocumentManager.MdiActiveDocument;
+            //Database db = doc.Database;
+            //Editor ed = doc.Editor;
+            SocketMessage Message = new SocketMessage();
+            SocketMessage SocketResponse = new SocketMessage();
+            SocketWrapper.AutoCAD AutoCADWrapper = new SocketWrapper.AutoCAD();
+
+            // Ask for the name of a block to watch for
+            string response = "END";
+            using (ZmqContext context = ZmqContext.Create())
+            using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
+            {
+                Message.MessageType = "Init Command";
+                Message.ContentType = "string";
+                Message.Content = "REPENT";
+                AutoCADWrapper.Message.MessageType = "Init Command";
+                AutoCADWrapper.Message.ContentType = "string";
+                AutoCADWrapper.Message.Content = "REPENT";
+                do
+                {
+                    SocketResponse = AutoCADWrapper.SendMessage(client, Message);
+                    Message = AutoCADWrapper.DispatchReply(SocketResponse);
+                    response = Message.Content.ToString();
+                } while (!response.Equals("END"));
+
+            }
+        }
+
+
+        [CommandMethod("REPENT1")]
         public void SetEventHandler()
         {
             Document doc = Application.DocumentManager.MdiActiveDocument;
             Database db = doc.Database;
             Editor ed = doc.Editor;
-
+            SocketMessage Message = new SocketMessage();
+            SocketMessage SocketResponse = new SocketMessage();
+            SocketWrapper.AutoCAD AutoCADWrapper = new SocketWrapper.AutoCAD();
 
             // Ask for the name of a block to watch for
-            
+            string response = "END";
+            using (ZmqContext context = ZmqContext.Create())
+            using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
+            {
+                Message.MessageType = "Init Command";
+                Message.ContentType = "string";
+                Message.Content = "REPENT";
+                do
+                {
+                    SocketResponse = AutoCADWrapper.SendMessage(client, Message);
+                    Message = AutoCADWrapper.DispatchReply(SocketResponse);
+                    response = Message.Content.ToString();
+                } while (!response.Equals("END"));
+
+            }
+
             PromptStringOptions pso =
               new PromptStringOptions(
                 "\nEnter entity type to mirror: "
@@ -173,12 +221,12 @@ namespace AutoCADPythonClient
                 return;
 
             string entityType = pr.StringResult.ToUpper();
-            PythonMessage message = new PythonMessage();
-            message.MessageType = "UserInput";
-            message.ContentType = "String";
-            message.Content = entityType;
+            
+            Message.MessageType = "UserInput";
+            Message.ContentType = "String";
+            Message.Content = entityType;
 
-            string messageBlob = JsonConvert.SerializeObject(message);
+            string messageBlob = JsonConvert.SerializeObject(Message);
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
             {
@@ -190,10 +238,9 @@ namespace AutoCADPythonClient
                 client.Send(messageBlob, Encoding.Unicode);
                 string reply = client.Receive(Encoding.Unicode);
                 reply = reply.Remove(0, 1);
-                var aaa = GetString(Encoding.Convert(Encoding.Unicode, Encoding.UTF8, GetBytes(reply)));
-                //reply = Encoding.UTF8.GetString(reply.ToCharArray())
-                //PythonMessage replyMessage1 = JsonConvert.DeserializeObject<PythonMessage>(aaa);
-                PythonMessage replyMessage = JsonConvert.DeserializeObject<PythonMessage>(reply);
+                //var aaa = GetString(Encoding.Convert(Encoding.Unicode, Encoding.UTF8, GetBytes(reply))); garbage
+                //reply = Encoding.UTF8.GetString(reply.ToCharArray()) garbage
+                SocketMessage replyMessage = JsonConvert.DeserializeObject<SocketMessage>(reply);
                 if (replyMessage.Content.Equals("OK"))
                 {
                     ed.WriteMessage("\nIt went *okay*.\n");
