@@ -184,7 +184,7 @@ namespace AutoCADPythonClient
 
 
         [CommandMethod("REPENT1")]
-        public void SetEventHandler()
+        public void SetEventHandler1()
         {
             Document doc = Application.DocumentManager.MdiActiveDocument;
             Database db = doc.Database;

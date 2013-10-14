@@ -105,7 +105,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AutoCAD.cs" />
+    <Compile Include="SocketWrapper.cs" />
     <Compile Include="PythonClientCommands.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
