@@ -54,10 +54,10 @@ namespace SocketWrapper
                     switch (message.Content.ToString())
                     {
                         case "ObjectCreated":
-                            ProcessCommand processor = new ProcessCommand();
+                            db.ObjectAppended += new ObjectEventHandler(OnObjectCreated);
                             break;
                         case "CommandEnded":
-                            break;                    
+                            break;
                     }
                     
                     break;
