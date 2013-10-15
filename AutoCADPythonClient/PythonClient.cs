@@ -8,9 +8,9 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.EditorInput;
 
 // This line is not mandatory, but improves loading performances
-[assembly: ExtensionApplication(typeof(AutoCADPythonClient.PythonClient))]
+[assembly: ExtensionApplication(typeof(ShadowbinderClient.PythonClient))]
 
-namespace AutoCADPythonClient
+namespace ShadowbinderClient
 {
 
     // This class is instantiated by AutoCAD once and kept alive for the 

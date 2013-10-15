@@ -16,9 +16,9 @@ using SocketWrapper;
 
 
 // This line is not mandatory, but improves loading performances
-[assembly: CommandClass(typeof(AutoCADPythonClient.PythonCommands))]
+[assembly: CommandClass(typeof(ShadowbinderClient.PythonCommands))]
 
-namespace AutoCADPythonClient
+namespace ShadowbinderClient
 {
     // This class is instantiated by AutoCAD for each document when
     // a command is called by the user the first time in the context
@@ -118,21 +118,6 @@ namespace AutoCADPythonClient
             }
         }
 
-        private ZmqSocket sendPythonMessage(string message)
-        {
-            using (ZmqContext context = ZmqContext.Create())
-            using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
-            {
-                client.Connect("tcp://localhost:5556");
-                string request = message;
-                client.SendTimeout = new TimeSpan(0, 0, 50);
-                client.ReceiveTimeout = new TimeSpan(0, 0, 50);
-                client.Send(request, Encoding.Unicode);
-                //string reply = client.Receive(Encoding.Unicode);
-                return client;
-            }
-        }
-
         //OK let's try an event handler
         //http://through-the-interface.typepad.com/through_the_interface/2010/02/watching-for-deletion-of-a-specific-autocad-block-using-net.html
         //
@@ -157,26 +142,28 @@ namespace AutoCADPythonClient
             //Document doc = Application.DocumentManager.MdiActiveDocument;
             //Database db = doc.Database;
             //Editor ed = doc.Editor;
-            SocketMessage Message = new SocketMessage();
-            SocketMessage SocketResponse = new SocketMessage();
+            //SocketMessage Message = new SocketMessage();
+            //SocketMessage SocketResponse = new SocketMessage();
             SocketWrapper.AutoCAD AutoCADWrapper = new SocketWrapper.AutoCAD();
 
             // Ask for the name of a block to watch for
-            string response = "END";
+            string response = "";
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
             {
-                Message.MessageType = "Init Command";
-                Message.ContentType = "string";
-                Message.Content = "REPENT";
-                AutoCADWrapper.Message.MessageType = "Init Command";
-                AutoCADWrapper.Message.ContentType = "string";
-                AutoCADWrapper.Message.Content = "REPENT";
+                //Message.MessageType = "Init Command";
+                //Message.ContentType = "string";
+                //Message.Content = "REPENT";
+                //AutoCADWrapper.Message = AutoCADWrapper.ComposeMessage("Init Command", "string", "REPENT");
+                AutoCADWrapper.Message = new SocketMessage("Init Command", "string", "REPENT");
+                //AutoCADWrapper.Message.MessageType = "Init Command";
+                //AutoCADWrapper.Message.ContentType = "string";
+                //AutoCADWrapper.Message.Content = "REPENT";
                 do
                 {
-                    SocketResponse = AutoCADWrapper.SendMessage(client, Message);
-                    Message = AutoCADWrapper.DispatchReply(SocketResponse);
-                    response = Message.Content.ToString();
+                    response = AutoCADWrapper.SendMessage(client, AutoCADWrapper.Message);
+                    string message = AutoCADWrapper.DispatchReply(AutoCADWrapper.Reply);
+                    response = AutoCADWrapper.Message.Content.ToString();
                 } while (!response.Equals("END"));
 
             }
@@ -189,8 +176,8 @@ namespace AutoCADPythonClient
             Document doc = Application.DocumentManager.MdiActiveDocument;
             Database db = doc.Database;
             Editor ed = doc.Editor;
-            SocketMessage Message = new SocketMessage();
-            SocketMessage SocketResponse = new SocketMessage();
+            //SocketMessage Message = new SocketMessage();
+            //SocketMessage SocketResponse = new SocketMessage();
             SocketWrapper.AutoCAD AutoCADWrapper = new SocketWrapper.AutoCAD();
 
             // Ask for the name of a block to watch for
@@ -198,14 +185,14 @@ namespace AutoCADPythonClient
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
             {
-                Message.MessageType = "Init Command";
-                Message.ContentType = "string";
-                Message.Content = "REPENT";
+                //Message.MessageType = "Init Command";
+                //Message.ContentType = "string";
+                //Message.Content = "REPENT";
                 do
                 {
-                    SocketResponse = AutoCADWrapper.SendMessage(client, Message);
-                    Message = AutoCADWrapper.DispatchReply(SocketResponse);
-                    response = Message.Content.ToString();
+                    //SocketResponse = AutoCADWrapper.SendMessage(client, Message);
+                    //Message = AutoCADWrapper.DispatchReply(SocketResponse);
+                    //response = Message.Content.ToString();
                 } while (!response.Equals("END"));
 
             }
@@ -222,11 +209,11 @@ namespace AutoCADPythonClient
 
             string entityType = pr.StringResult.ToUpper();
             
-            Message.MessageType = "UserInput";
-            Message.ContentType = "String";
-            Message.Content = entityType;
+            //Message.MessageType = "UserInput";
+            //Message.ContentType = "String";
+            //Message.Content = entityType;
 
-            string messageBlob = JsonConvert.SerializeObject(Message);
+            //string messageBlob = JsonConvert.SerializeObject(Message);
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
             {
@@ -235,7 +222,7 @@ namespace AutoCADPythonClient
                 client.SendTimeout = new TimeSpan(0, 0, 10);
                 client.ReceiveTimeout = new TimeSpan(0, 0, 10);
 
-                client.Send(messageBlob, Encoding.Unicode);
+                //client.Send(messageBlob, Encoding.Unicode);
                 string reply = client.Receive(Encoding.Unicode);
                 reply = reply.Remove(0, 1);
                 //var aaa = GetString(Encoding.Convert(Encoding.Unicode, Encoding.UTF8, GetBytes(reply))); garbage

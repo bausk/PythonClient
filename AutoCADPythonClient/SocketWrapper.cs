@@ -14,6 +14,14 @@ namespace SocketWrapper
     public delegate void ProcessCommand(SocketMessage Message);
     public class SocketMessage
         {
+        public SocketMessage(string msgType, string contentType, object content)
+        {
+            this.MessageType = msgType;
+            this.ContentType = contentType;
+            this.Content = content;
+            this.SerializedContent = JsonConvert.SerializeObject(content);
+        }
+
             public string MessageType { get; set; }
             public string ContentType { get; set; }
             public string SerializedContent { get; set; }
@@ -26,51 +34,60 @@ namespace SocketWrapper
             doc = Application.DocumentManager.MdiActiveDocument;
             db = doc.Database;
             ed = doc.Editor;
-            Message = new SocketMessage();
-            Reply = new SocketMessage();
+            //Message = new SocketMessage();
+            //Reply = new SocketMessage();
             SendTimeout = 10;
             ReceiveTimeout = 10;
             Port = 5556;
         }
-        public SocketMessage SendMessage(ZmqSocket client, SocketMessage message)
+        /*public SocketMessage ComposeMessage(string msgType, string contentType, object content)
         {
-            SocketMessage response = new SocketMessage();
+            SocketMessage message = new SocketMessage();
+            message.MessageType = msgType;
+            message.ContentType = contentType;
+            message.Content = content;
+            message.SerializedContent = JsonConvert.SerializeObject(content);
+            return message;
+        }*/
+        public string SendMessage(ZmqSocket client, SocketMessage message)
+        {
+            string response = "";
             client.Connect("tcp://localhost:" + Port.ToString());
             client.SendTimeout = new TimeSpan(0, 0, SendTimeout);
             client.ReceiveTimeout = new TimeSpan(0, 0, ReceiveTimeout);
-            SerializedMessage = JsonConvert.SerializeObject(message);
+            this.SerializedMessage = JsonConvert.SerializeObject(message);
             client.Send(SerializedMessage, Encoding.Unicode);
-            SerializedReply = client.Receive(Encoding.Unicode).Remove(0,1);
-            Reply = JsonConvert.DeserializeObject<SocketMessage>(SerializedReply);
-            return Reply;
+            this.SerializedReply = client.Receive(Encoding.Unicode).Remove(0,1);
+            this.Reply = JsonConvert.DeserializeObject<SocketMessage>(SerializedReply);
+            return response;
         }
-        public SocketMessage DispatchReply(SocketMessage message)
+        public string DispatchReply(SocketMessage message)
         {
-            SocketMessage response = new SocketMessage();
-
+            //SocketMessage response = new SocketMessage();
+            string returnValue = "OK";
+            this.Reply = new SocketMessage("OK", "string", "OK");
             switch (message.MessageType)
             {
                 case "Set Event":
-                    switch (message.Content.ToString())
-                    {
-                        case "ObjectCreated":
-                            db.ObjectAppended += new ObjectEventHandler(OnObjectCreated);
-                            break;
-                        case "CommandEnded":
-                            break;
-                    }
-                    
+                    SetEvent();
                     break;
                 case "Add Entities":
+                    break;
                 case "User Input":
-
+                    break;
+                case "END":
+                    this.Reply = new SocketMessage("END", "string", "END");
+                    returnValue = "END";
+                    break;
                 default:
+                    this.Reply = new SocketMessage("END", "string", "END");
+                    returnValue = "END";
                     break;
             }
-            response.Content = "END";
-            return response;
+            return returnValue;
         }
-        private void SetEvent(SocketMessage Message)
+
+        private void SetEvent()
         {
             switch (Message.Content.ToString())
             {
@@ -79,15 +96,19 @@ namespace SocketWrapper
                     break;
                 case "CommandEnded":
                     break;
-
+                default:
+                    Reply.MessageType = "END";
+                    return;
             }
+            Reply.MessageType = "OK";
+
         }
 
         public void OnObjectCreated(object sender, ObjectEventArgs e)
         {
-          // Very simple: we just add our ObjectId to the list
-          // for later processing
-
+          // Callback binder for real Python event handler
+          // We should prepare a message and send it to Python
+          // to initiate a session
             var a = e.DBObject.ObjectId;
         }
 
