@@ -28,18 +28,19 @@ def init():
 
 def handler(alive_socket, *args, **kwargs):
     message = alive_socket.recv()
-    reply = message.decode("utf_16")
-    message_object = simplejson.loads(reply)
+    decoded_message = message.decode("utf_16")
+    message_object = simplejson.loads(decoded_message)
     
-    prompt = u"Received entity information\n"
+    prompt = u"Received a message\n"
     print(prompt.encode(sys.stdout.encoding))
 
-    message = {'MessageType':"None", 'ContentType':"None", 'Content':"OK"}
+    message = {'MessageType':"Set Event", 'ContentType':"None", 'Content':"ObjectCreated", 'SerializedContent':'"ObjectCreated"'}
     message_blob = simplejson.dumps(message, encoding = "UTF-8")#.encode(encoding = "ASCII")
+    message_blob2 = simplejson.dumps(message).encode(encoding = "UTF-16")
     #message_blob = "111aaa".encode(encoding = "UTF-8")
     #message_blob = "{'MessageType':'None', 'ContentType':'None', 'Content':'OK'}".encode(encoding = "UTF-16")
     alive_socket.send(message_blob)
-    message_blob = simplejson.dumps(message, encoding = "UTF-8")
+    #message_blob = simplejson.dumps(message, encoding = "UTF-16")
     #alive_socket.send_json(message_blob)
 
 def main():

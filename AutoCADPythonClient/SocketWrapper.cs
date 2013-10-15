@@ -21,7 +21,13 @@ namespace SocketWrapper
             this.Content = content;
             this.SerializedContent = JsonConvert.SerializeObject(content);
         }
-
+        public SocketMessage()
+        {
+            this.MessageType = "";
+            this.ContentType = "";
+            this.Content = null;
+            this.SerializedContent = "";
+        }
             public string MessageType { get; set; }
             public string ContentType { get; set; }
             public string SerializedContent { get; set; }
@@ -57,7 +63,8 @@ namespace SocketWrapper
             client.ReceiveTimeout = new TimeSpan(0, 0, ReceiveTimeout);
             this.SerializedMessage = JsonConvert.SerializeObject(message);
             client.Send(SerializedMessage, Encoding.Unicode);
-            this.SerializedReply = client.Receive(Encoding.Unicode).Remove(0,1);
+            this.SerializedReply = client.Receive(Encoding.UTF8);//.Remove(0,1);
+            var a = JsonConvert.DeserializeObject(SerializedReply);
             this.Reply = JsonConvert.DeserializeObject<SocketMessage>(SerializedReply);
             return response;
         }
@@ -65,7 +72,7 @@ namespace SocketWrapper
         {
             //SocketMessage response = new SocketMessage();
             string returnValue = "OK";
-            this.Reply = new SocketMessage("OK", "string", "OK");
+            this.Message = new SocketMessage("OK", "string", "OK");
             switch (message.MessageType)
             {
                 case "Set Event":
@@ -89,7 +96,8 @@ namespace SocketWrapper
 
         private void SetEvent()
         {
-            switch (Message.Content.ToString())
+            this.db.ObjectAppended += new ObjectEventHandler(OnObjectCreated);
+            switch (this.Reply.Content.ToString())
             {
                 case "ObjectCreated":
                     db.ObjectAppended += new ObjectEventHandler(OnObjectCreated);
@@ -97,19 +105,33 @@ namespace SocketWrapper
                 case "CommandEnded":
                     break;
                 default:
-                    Reply.MessageType = "END";
+                    this.Message.MessageType = "END";
                     return;
             }
-            Reply.MessageType = "OK";
+            this.Message.MessageType = "OK";
 
         }
 
         public void OnObjectCreated(object sender, ObjectEventArgs e)
         {
-          // Callback binder for real Python event handler
-          // We should prepare a message and send it to Python
-          // to initiate a session
-            var a = e.DBObject.ObjectId;
+            // Callback binder for real Python event handler
+            // We should prepare a message and send it to Python
+            // to initiate a session
+            //var a = e.DBObject.ObjectId;
+            //SocketWrapper.AutoCAD AutoCADWrapper = new SocketWrapper.AutoCAD();
+            string our_reply = "";
+            using (ZmqContext context = ZmqContext.Create())
+            using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
+            {
+                this.Message = new SocketMessage("Init Command", "string", "REPENT");
+                do
+                {
+                    string response = this.SendMessage(client, this.Message);
+                    our_reply = this.DispatchReply(this.Reply);
+                } while (!our_reply.Equals("END"));
+
+            }
+
         }
 
         public SocketMessage Message { get; set; }

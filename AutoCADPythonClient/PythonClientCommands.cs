@@ -139,32 +139,17 @@ namespace ShadowbinderClient
         [CommandMethod("REPENT")]
         public void SetEventHandler()
         {
-            //Document doc = Application.DocumentManager.MdiActiveDocument;
-            //Database db = doc.Database;
-            //Editor ed = doc.Editor;
-            //SocketMessage Message = new SocketMessage();
-            //SocketMessage SocketResponse = new SocketMessage();
             SocketWrapper.AutoCAD AutoCADWrapper = new SocketWrapper.AutoCAD();
-
-            // Ask for the name of a block to watch for
-            string response = "";
+            string our_reply = "";
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
             {
-                //Message.MessageType = "Init Command";
-                //Message.ContentType = "string";
-                //Message.Content = "REPENT";
-                //AutoCADWrapper.Message = AutoCADWrapper.ComposeMessage("Init Command", "string", "REPENT");
                 AutoCADWrapper.Message = new SocketMessage("Init Command", "string", "REPENT");
-                //AutoCADWrapper.Message.MessageType = "Init Command";
-                //AutoCADWrapper.Message.ContentType = "string";
-                //AutoCADWrapper.Message.Content = "REPENT";
                 do
                 {
-                    response = AutoCADWrapper.SendMessage(client, AutoCADWrapper.Message);
-                    string message = AutoCADWrapper.DispatchReply(AutoCADWrapper.Reply);
-                    response = AutoCADWrapper.Message.Content.ToString();
-                } while (!response.Equals("END"));
+                    string response = AutoCADWrapper.SendMessage(client, AutoCADWrapper.Message);
+                    our_reply = AutoCADWrapper.DispatchReply(AutoCADWrapper.Reply);
+                } while (!our_reply.Equals("END"));
 
             }
         }
