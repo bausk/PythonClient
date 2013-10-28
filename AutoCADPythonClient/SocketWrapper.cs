@@ -11,28 +11,45 @@ using Newtonsoft.Json;
 
 namespace SocketWrapper
 {
-    public delegate void ProcessCommand(SocketMessage Message);
     public class SocketMessage
         {
+        public const int Empty = 0;
+        public const int End = 1;
+        public const int Abort = 2;
+        public const int Error = 3;
+
         public SocketMessage(string msgType, string contentType, object content)
         {
             this.MessageType = msgType;
             this.ContentType = contentType;
             this.Content = content;
-            this.SerializedContent = JsonConvert.SerializeObject(content);
+            this.Callback = "";
+            //this.SerializedContent = JsonConvert.SerializeObject(content);
+        }
+        public SocketMessage(string msgType, string contentType, object content, string callback)
+        {
+            this.MessageType = msgType;
+            this.ContentType = contentType;
+            this.Content = content;
+            this.Callback = callback;
+            //this.SerializedContent = JsonConvert.SerializeObject(content);
         }
         public SocketMessage()
         {
             this.MessageType = "";
             this.ContentType = "";
             this.Content = null;
-            this.SerializedContent = "";
+            this.Callback = "";
+            //this.SerializedContent = "";
         }
-            public string MessageType { get; set; }
-            public string ContentType { get; set; }
-            public string SerializedContent { get; set; }
-            public object Content { get; set; }
+        public string MessageType { get; set; }
+        public string ContentType { get; set; }
+        public string Callback { get; set; }
+        //public string SerializedContent { get; set; }
+        public object Content { get; set; }
+
         }
+
     public class AutoCAD
     {
         public AutoCAD()
@@ -55,9 +72,9 @@ namespace SocketWrapper
             message.SerializedContent = JsonConvert.SerializeObject(content);
             return message;
         }*/
-        public string SendMessage(ZmqSocket client, SocketMessage message)
+        public SocketMessage SendMessage(ZmqSocket client, SocketMessage message)
         {
-            string response = "";
+            //SocketMessage response = new SocketMessage();
             client.Connect("tcp://localhost:" + Port.ToString());
             client.SendTimeout = new TimeSpan(0, 0, SendTimeout);
             client.ReceiveTimeout = new TimeSpan(0, 0, ReceiveTimeout);
@@ -65,39 +82,52 @@ namespace SocketWrapper
             client.Send(SerializedMessage, Encoding.Unicode);
             this.SerializedReply = client.Receive(Encoding.UTF8);//.Remove(0,1);
             var a = JsonConvert.DeserializeObject(SerializedReply);
-            this.Reply = JsonConvert.DeserializeObject<SocketMessage>(SerializedReply);
+            SocketMessage response = JsonConvert.DeserializeObject<SocketMessage>(SerializedReply);
             return response;
         }
-        public string DispatchReply(SocketMessage message)
+        public SocketMessage DispatchReply(SocketMessage reply)
         {
-            //SocketMessage response = new SocketMessage();
-            string returnValue = "OK";
-            this.Message = new SocketMessage("OK", "string", "OK");
-            switch (message.MessageType)
+            SocketMessage message = new SocketMessage("END", "STRING", "END");
+            switch (reply.MessageType)
             {
-                case "Set Event":
-                    SetEvent();
+                case "SET_EVENT":
+                    message = this.SetEvent(reply);
                     break;
-                case "Add Entities":
+                case "MANIPULATE_DB":
                     break;
-                case "User Input":
+                case "REQUEST_INPUT":
+                    //this.Reply = new SocketMessage("CONTINUE", "STRING", message.Callback);
+                    message = this.GetUserInput(reply);
                     break;
                 case "END":
-                    this.Reply = new SocketMessage("END", "string", "END");
-                    returnValue = "END";
+                    message = new SocketMessage("END", "STRING", "END");
+                    //returnValue = "END";
                     break;
                 default:
-                    this.Reply = new SocketMessage("END", "string", "END");
-                    returnValue = "END";
+                    message = new SocketMessage("END", "STRING", "END");
+                    //returnValue = "END";
                     break;
             }
-            return returnValue;
+            message.Callback = reply.Callback;
+            return message;
         }
 
-        private void SetEvent()
+        private SocketMessage GetUserInput(SocketMessage reply)
+        {
+            PromptStringOptions pso = new PromptStringOptions("\nPlease enter your input:");
+            pso.AllowSpaces = true;
+            PromptResult pr = ed.GetString(pso);
+
+            if (pr.Status != PromptStatus.OK)
+                return new SocketMessage("ERROR", "STRING", "USERABORT");
+
+            return new SocketMessage("CONTINUE", "STRING", pr.StringResult);
+        }
+
+        private SocketMessage SetEvent(SocketMessage reply)
         {
             this.db.ObjectAppended += new ObjectEventHandler(OnObjectCreated);
-            switch (this.Reply.Content.ToString())
+            switch (reply.Content.ToString())
             {
                 case "ObjectCreated":
                     db.ObjectAppended += new ObjectEventHandler(OnObjectCreated);
@@ -106,10 +136,10 @@ namespace SocketWrapper
                     break;
                 default:
                     this.Message.MessageType = "END";
-                    return;
+                    return new SocketMessage();
             }
             this.Message.MessageType = "OK";
-
+            return new SocketMessage();
         }
 
         public void OnObjectCreated(object sender, ObjectEventArgs e)
@@ -119,19 +149,25 @@ namespace SocketWrapper
             // to initiate a session
             //var a = e.DBObject.ObjectId;
             //SocketWrapper.AutoCAD AutoCADWrapper = new SocketWrapper.AutoCAD();
-            string our_reply = "";
+            /*string our_reply = "";
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
             {
-                this.Message = new SocketMessage("Init Command", "string", "REPENT");
+                this.Message = new SocketMessage("Init Event", "STRING", "OnObjectCreated");
                 do
                 {
                     string response = this.SendMessage(client, this.Message);
                     our_reply = this.DispatchReply(this.Reply);
+                    our_reply = "END";
                 } while (!our_reply.Equals("END"));
 
-            }
+            }*/
 
+        }
+
+        public bool CheckForExit(SocketMessage Message)
+        {
+            return false;
         }
 
         public SocketMessage Message { get; set; }
@@ -144,5 +180,22 @@ namespace SocketWrapper
         private Document doc { get; set; }
         private Database db { get; set; }
         private Editor ed { get; set; }
+
+
+        static byte[] GetBytes(string str)
+        {
+            byte[] bytes = new byte[str.Length * sizeof(char)];
+            System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
+            return bytes;
+        }
+
+        static string GetString(byte[] bytes)
+        {
+            char[] chars = new char[bytes.Length / sizeof(char)];
+            System.Buffer.BlockCopy(bytes, 0, chars, 0, bytes.Length);
+            return new string(chars);
+        }
+
     }
+
 }

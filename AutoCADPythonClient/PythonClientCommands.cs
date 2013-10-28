@@ -17,7 +17,6 @@ using SocketWrapper;
 
 // This line is not mandatory, but improves loading performances
 [assembly: CommandClass(typeof(ShadowbinderClient.PythonCommands))]
-
 namespace ShadowbinderClient
 {
     // This class is instantiated by AutoCAD for each document when
@@ -122,34 +121,22 @@ namespace ShadowbinderClient
         //http://through-the-interface.typepad.com/through_the_interface/2010/02/watching-for-deletion-of-a-specific-autocad-block-using-net.html
         //
 
-        static byte[] GetBytes(string str)
-        {
-            byte[] bytes = new byte[str.Length * sizeof(char)];
-            System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
-            return bytes;
-        }
-
-        static string GetString(byte[] bytes)
-        {
-            char[] chars = new char[bytes.Length / sizeof(char)];
-            System.Buffer.BlockCopy(bytes, 0, chars, 0, bytes.Length);
-            return new string(chars);
-        }
-
         [CommandMethod("REPENT")]
         public void SetEventHandler()
         {
             SocketWrapper.AutoCAD AutoCADWrapper = new SocketWrapper.AutoCAD();
-            string our_reply = "";
+            SocketMessage Message = new SocketMessage("COMMAND", "NONE", "", "REPENT");
+            SocketMessage Reply = new SocketMessage();
+            bool exitflag = false;
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
             {
-                AutoCADWrapper.Message = new SocketMessage("Init Command", "string", "REPENT");
                 do
                 {
-                    string response = AutoCADWrapper.SendMessage(client, AutoCADWrapper.Message);
-                    our_reply = AutoCADWrapper.DispatchReply(AutoCADWrapper.Reply);
-                } while (!our_reply.Equals("END"));
+                    Reply = AutoCADWrapper.SendMessage(client, Message);
+                    exitflag = AutoCADWrapper.CheckForExit(Reply);
+                    if (!exitflag) Message = AutoCADWrapper.DispatchReply(Reply);
+                } while (!exitflag);
 
             }
         }

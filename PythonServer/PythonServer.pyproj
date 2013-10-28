@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>4bcb88af-57c0-4def-afaa-9b7140bbb40d</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>PythonServer.py</StartupFile>
+    <StartupFile>PythonServerImplementation.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -27,7 +27,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="PythonServer.py" />
+    <Compile Include="MessageServer.py" />
+    <Compile Include="module1.py" />
+    <Compile Include="test.py" />
+    <Compile Include="PythonServerImplementation.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>
