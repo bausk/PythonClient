@@ -30,10 +30,13 @@ class Message(object):
         #self.SerializedContent = simplejson.dumps(Content)
         self.Callback = Callback
 
+
+
 class Procedure(object):
     Procedures = {}
     def __init__ (self):
         self.Procedures[self.__class__.__name__] = self.__class__
+    
 
 class MessageEncoder(JSONEncoder):
     def default(self, o):
@@ -44,7 +47,7 @@ class MessageEncoder(JSONEncoder):
                 "Callback": o.Callback
                 }
 
-class ExecutionState(object):
+class Handler(object):
     def __init__( self , reg):
         self.RegisteredMethods = reg
             

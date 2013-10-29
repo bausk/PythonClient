@@ -10,7 +10,7 @@ import collections
 import time
 import zmq
 from zmq.eventloop import ioloop
-from MessageServer import Message, ExecutionState, Procedure
+from MessageServer import Message, Handler, Procedure
 ALIVE_URL = 'tcp://127.0.0.1:5556'
 
 #class Message(object):
@@ -26,7 +26,6 @@ ALIVE_URL = 'tcp://127.0.0.1:5556'
 
 def init():
     return argv
-
 
 class Command_1(Procedure):
     def __init__( self ):
@@ -63,10 +62,11 @@ class OnCommandEnded(Procedure):
 def main():
     script, filename = init()
     print("Shadowbinder server starting...\n")
-    ExState = ExecutionState({
+    ExState = Handler({
                                   'REPENT': Command_1(),
                                   'OnCommandEnded': OnCommandEnded()
                                   })
+
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind(ALIVE_URL)
