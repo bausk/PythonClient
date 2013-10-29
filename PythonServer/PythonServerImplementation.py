@@ -72,6 +72,7 @@ def main():
     socket.bind(ALIVE_URL)
     io_loop = ioloop.IOLoop.instance()
     io_loop.add_handler(socket, ExState.handler, io_loop.READ)
+    ExState.handler(socket)
     print("Started IO loop.\n")
     io_loop.start()
     print("Work complete.\n")

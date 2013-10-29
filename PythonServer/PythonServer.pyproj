@@ -29,7 +29,8 @@
   <ItemGroup>
     <Compile Include="MessageServer.py" />
     <Compile Include="module1.py" />
-    <Compile Include="test.py" />
+    <Compile Include="test_metaclass.py" />
+    <Compile Include="test_decorators.py" />
     <Compile Include="PythonServerImplementation.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

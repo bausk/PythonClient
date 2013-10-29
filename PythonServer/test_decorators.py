@@ -2,7 +2,7 @@ from module1 import base, a
 from functools import wraps
 from types import MethodType
 
-#Lott's class factory
+#Lott's class instance factory
 class Foobar_Collection( dict ):
     def __init__( self, *arg, **kw ):
         super( Foobar_Collection, self ).__init__( *arg, **kw )
@@ -57,7 +57,7 @@ class decoratorWithArguments(object):
             print "After f(*args)"
         return wrapped_f
 
-#metaclass as a subclass black magic
+#metaclass as a .__subclasses__ black magic
 #child class tracker
 class ChildTracker(type):
     """ Usage:
@@ -73,6 +73,18 @@ class ChildTracker(type):
             # Add the new class to the set
             new_class.child_classes[name] = new_class
         return new_class
+
+#minimal method decorator
+#http://stackoverflow.com/questions/12589522/minimal-decorator-for-class-method
+def states(*states):
+    def decorator (f):
+        @wraps(f)   # In order to preserve docstrings, etc.
+        def wrapped(self, *args, **kwargs):
+            if self.state not in states:
+                raise error
+            return f(self, *args, **kwargs)
+        return wrapped
+    return decorator
 
 #noice good decorator
 #use by inheritance
