@@ -11,6 +11,7 @@ import time
 import zmq
 from zmq.eventloop import ioloop
 from MessageServer import Message, Handler, Procedure
+
 ALIVE_URL = 'tcp://127.0.0.1:5556'
 
 #class Message(object):
@@ -62,10 +63,7 @@ class OnCommandEnded(Procedure):
 def main():
     script, filename = init()
     print("Shadowbinder server starting...\n")
-    ExState = Handler({
-                                  'REPENT': Command_1(),
-                                  'OnCommandEnded': OnCommandEnded()
-                                  })
+    ExState = Handler2()
 
     context = zmq.Context()
     socket = context.socket(zmq.REP)

@@ -12,8 +12,15 @@ from collections import namedtuple
 import time
 import zmq
 from zmq.eventloop import ioloop
+import uuid
 
 def _json_object_hook(d): return namedtuple('Message', d.keys())(*d.values())
+
+def Alphanumeric(string):
+    return "".join([x if x.isalnum() else "" for x in string])
+
+def GenerateUuid():
+    return str(uuid.uuid4())
 
 class Message(object):
     Types = {
@@ -33,9 +40,13 @@ class Message(object):
 
 
 class Procedure(object):
-    Procedures = {}
+    #Procedures = {}
     def __init__ (self):
-        self.Procedures[self.__class__.__name__] = self.__class__
+        self.Objects = {}
+        self.Uuid = ""
+        #self.Procedures[self.__class__.__name__] = self.__class__
+    def GetSubclassesDict(self):
+        return {x.__name__:x for x in self.__class__.__subclasses__()}
     
 
 class MessageEncoder(JSONEncoder):
@@ -58,6 +69,30 @@ class Handler(object):
         print("Received by handler: " + message_string + "\n")
         #Cleanup for errors received from client should be somewhere here.
         #Something like this: self.RegisteredMethods[message.Content].__init__()
+        WorkingMethod = self.RegisteredMethods[message.Callback]
+        reply = WorkingMethod(message)
+        reply_string = simplejson.dumps(reply.__dict__)
+        alive_socket.send(reply_string)
+        #reply = {'MessageType':"Set Event", 'ContentType':"None", 'Content':"ObjectCreated", 'SerializedContent':'"ObjectCreated"'}
+
+class Handler2(object):
+    def __init__(self):
+        self.dInteractions = {}
+        self.dRegisteredProcedures = Procedure.GetSubclassesDict()
+    def handler(self, alive_socket, *args, **kwargs):
+        message_string = alive_socket.recv().decode("utf_16")
+        message = Message()
+        message = simplejson.loads(message_string, object_hook=_json_object_hook)
+        print("Received by handler: " + message_string + "\n")
+        #Cleanup for errors received from client should be somewhere here.
+        #Something like this: self.RegisteredMethods[message.Content].__init__()
+        MethodIdentifier = Alphanumeric(message.Callback)
+        if message.MessageType.upper() == "COMMAND":
+            MethodUUID = GenerateUuid()
+            self.dInteractions[MethodUUID] = ProcedureFactory.Instantiate(self.dRegisteredProcedures[MethodIdentifier]) #??
+        else:
+            MethodUUID = MethodIdentifier
+        
         WorkingMethod = self.RegisteredMethods[message.Callback]
         reply = WorkingMethod(message)
         reply_string = simplejson.dumps(reply.__dict__)
