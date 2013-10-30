@@ -16,8 +16,7 @@ import uuid
 
 def _json_object_hook(d): return namedtuple('Message', d.keys())(*d.values())
 
-def Alphanumeric(string):
-    return "".join([x if x.isalnum() else "" for x in string])
+
 
 def GenerateUuid():
     return str(uuid.uuid4())
@@ -45,8 +44,12 @@ class Procedure(object):
         self.Objects = {}
         self.Uuid = ""
         #self.Procedures[self.__class__.__name__] = self.__class__
-    def GetSubclassesDict(self):
-        return {x.__name__:x for x in self.__class__.__subclasses__()}
+    @classmethod
+    def GetSubclassesDict(cls):
+        return {Alphanumeric(x.__name__):x for x in cls.__subclasses__()}
+    @staticmethod
+    def Alphanumeric(string):
+        return "".join([x if x.isalnum() else "" for x in string.upper()])
     
 
 class MessageEncoder(JSONEncoder):
@@ -80,15 +83,16 @@ class Handler2(object):
         self.dInteractions = {}
         self.dRegisteredProcedures = Procedure.GetSubclassesDict()
     def handler(self, alive_socket, *args, **kwargs):
-        message_string = alive_socket.recv().decode("utf_16")
+        #message_string = alive_socket.recv().decode("utf_16")
+        message_string = u'{"MessageType":"COMMAND","ContentType":"NONE","Callback":"REPENT","Content":""}'
         message = Message()
         message = simplejson.loads(message_string, object_hook=_json_object_hook)
         print("Received by handler: " + message_string + "\n")
         #Cleanup for errors received from client should be somewhere here.
         #Something like this: self.RegisteredMethods[message.Content].__init__()
-        MethodIdentifier = Alphanumeric(message.Callback)
+        MethodIdentifier = Procedure.Alphanumeric(message.Callback)
         if message.MessageType.upper() == "COMMAND":
-            MethodUUID = GenerateUuid()
+            MethodUUID = Procedure.Alphanumeric(GenerateUuid())
             self.dInteractions[MethodUUID] = ProcedureFactory.Instantiate(self.dRegisteredProcedures[MethodIdentifier]) #??
         else:
             MethodUUID = MethodIdentifier
