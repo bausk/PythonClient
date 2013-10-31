@@ -10,7 +10,8 @@ import collections
 import time
 import zmq
 from zmq.eventloop import ioloop
-from MessageServer import Message, Handler, Handler2, Procedure, Protocol
+from MessageServer import Message, Handler, Handler2, Procedure, Protocol, state
+#from test_decorator_tracker import *
 
 ALIVE_URL = 'tcp://127.0.0.1:5556'
 
@@ -28,22 +29,20 @@ ALIVE_URL = 'tcp://127.0.0.1:5556'
 def init():
     return argv
 
-class Command_1(Procedure):
-    def __init__( self ):
-        self.CurrentState = 0
-        self.StateDict = {
-                          0: self.state0,
-                          1: self.state1
-                          }
-        Procedure.__init__(self)
-    def __call__( self, message = Message() ):
-        reply = self.StateDict[self.CurrentState](message)
-        return reply
+class Repent(Procedure):
+
+    #def __call__( self, message = Message() ):
+    #    reply = self.StateDict[self.CurrentState](message)
+    #    return reply
+
+    @state(0)
     def state0(self, message):
         reply = Message(MessageType = "REQUEST_INPUT", Content = "STRING", Callback = "REPENT")
         #make reply, in which ask client for user input
-        self.CurrentState += 1
+        #self.CurrentState += 1
         return reply
+
+    @state(1)
     def state1(self, message):
         reply = message #this is a stub
         #do actual work with user input supposedly received in message

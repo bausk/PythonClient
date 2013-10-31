@@ -7,17 +7,27 @@ import sys
 import simplejson
 from json import JSONEncoder
 from sys import argv
-#import collections
 from collections import namedtuple
 import time
 import zmq
 from zmq.eventloop import ioloop
+from functools import wraps
 import uuid
 
 def _json_object_hook(d): return namedtuple('Message', d.keys())(*d.values())
 
 def Alphanumeric(string):
     return "".join([x if x.isalnum() else "" for x in string.upper()])
+
+def state(statenum):
+    def decorator (f):
+        f.func_dict['state'] = statenum
+        @wraps(f)   # In order to preserve docstrings, etc.
+        def wrapped (self, *args, **kwargs):
+            f.state = statenum
+            return f(self, *args, **kwargs)
+        return wrapped
+    return decorator
 
 class Protocol(object):
     FINISH = "__FINISH__"
@@ -43,12 +53,18 @@ class Message(object):
 
 
 class Procedure(object):
-    #Procedures = {}
     def __init__ (self):
         self.Objects = {}
         self.Uuid = ""
         self.CurrentState = 0
-        #self.Procedures[self.__class__.__name__] = self.__class__
+        #methods = [method for method in dir(self) if hasattr(getattr(self, method), 'state')]
+        self.StateDict = dict([(getattr(self,method).state, getattr(self,method)) for method in dir(self) if hasattr(getattr(self, method), 'state')])
+        #self.StateDict = {methodname: value for me}
+    def __call__( self, message = Message() ):
+        reply = self.StateDict[self.CurrentState](message)
+        self.CurrentState += 1
+        return reply
+
     @classmethod
     def GetSubclassesDict(cls):
         return {Alphanumeric(x.__name__):x for x in cls.__subclasses__()}

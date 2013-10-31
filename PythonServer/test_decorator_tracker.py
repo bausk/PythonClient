@@ -2,16 +2,6 @@ from module1 import base, a
 from functools import wraps
 from types import MethodType
 
-#Lott's class instance factory
-class Foobar_Collection( dict ):
-    def __init__( self, *arg, **kw ):
-        super( Foobar_Collection, self ).__init__( *arg, **kw )
-    def foobar( self, *arg, **kw ):
-        fb= Foobar( *arg, **kw )
-        self[fb.name]= fb
-        return fb
-
-
 #a variety of decorators
 def testlogger1(func):
     @wraps(func)
@@ -19,6 +9,18 @@ def testlogger1(func):
         print "Entering %s.%s" % (args[0].__class__.__name__, func.__name__)
         return func(*args, **kwargs)
     return with_logging
+
+from functools import wraps
+
+def state(statenum):
+    def decorator (f):
+        f.func_dict['state'] = statenum
+        @wraps(f)   # In order to preserve docstrings, etc.
+        def wrapped (self, *args, **kwargs):
+            f.func_dict['state'] = statenum
+            return f(self, *args, **kwargs)
+        return wrapped
+    return decorator
 
 #Argument passed to decorator
 def myDecorator(logIt):
@@ -33,15 +35,9 @@ def myDecorator(logIt):
 
 #Same using class
 class decoratorWithArguments(object):
-    def __init__(self, arg1, arg2, arg3):
-        """
-        If there are decorator arguments, the function
-        to be decorated is not passed to the constructor!
-        """
+    def __init__(self, arg1):
         print "Inside __init__()"
         self.arg1 = arg1
-        self.arg2 = arg2
-        self.arg3 = arg3
 
     def __call__(self, f):
         """
@@ -49,10 +45,9 @@ class decoratorWithArguments(object):
         once, as part of the decoration process! You can only give
         it a single argument, which is the function object.
         """
-        print "Inside __call__()"
+        print "Inside __call__()", self.arg1
+        @wraps(f)
         def wrapped_f(*args):
-            print "Inside wrapped_f()"
-            print "Decorator arguments:", self.arg1, self.arg2, self.arg3
             f(*args)
             print "After f(*args)"
         return wrapped_f
@@ -136,15 +131,3 @@ class my_decorator(method_decorator):
             kwargs=kwargs,
         ))
         return method_decorator.__call__(self, *args, **kwargs)
-
-class TestCommand(TestProcedure):
-    def init():
-        pass
-
-    @state(0)
-    def state0():
-        pass
-
-    @state(1)
-    def state1():
-        pass
