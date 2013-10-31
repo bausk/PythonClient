@@ -19,7 +19,10 @@ def _json_object_hook(d): return namedtuple('Message', d.keys())(*d.values())
 def Alphanumeric(string):
     return "".join([x if x.isalnum() else "" for x in string.upper()])
 
-class Message(object):
+class Protocol(object):
+    FINISH = "__FINISH__"
+    CMD = "COMMAND"
+    SENDMSG = "SENDMESSAGE"
     Types = {
                 type(""):"STRING",
                 type([]):"LIST",
@@ -27,13 +30,15 @@ class Message(object):
                 object:"OBJECT",
                 type(None):"NONE"
                 }
+
+
+class Message(object):
     def __init__( self, MessageType = "", Content = None, Callback = ""):
         self.MessageType = MessageType
-        self.ContentType = self.Types[type(Content)]
+        self.ContentType = Protocol.Types[type(Content)]
         self.Content = Content
         #self.SerializedContent = simplejson.dumps(Content)
         self.Callback = Callback
-
 
 
 class Procedure(object):
@@ -74,26 +79,35 @@ class Handler(object):
         #reply = {'MessageType':"Set Event", 'ContentType':"None", 'Content':"ObjectCreated", 'SerializedContent':'"ObjectCreated"'}
 
 class Handler2(object):
+    ErrorMessages = {
+                     KeyError: "Command {} was not recognized by server",
+                     NotImplementedError: "Command {} is not implemented yet",
+                     }
     def __init__(self):
         self.dInstantiatedProcedures = {}
         self.dRegisteredProcedures = Procedure.GetSubclassesDict()
     def Handler(self, alive_socket, *args, **kwargs):
         #message_string = alive_socket.recv().decode("utf_16")
-        message_string = u'{"MessageType":"COMMAND","ContentType":"NONE","Callback":"REPENT","Content":""}'
-        message = Message()
-        message = simplejson.loads(message_string, object_hook=_json_object_hook)
-        print("Received by handler: " + message_string + "\n")
+        stringReply = u'{"MessageType":"COMMAND","ContentType":"NONE","Callback":"REPENT","Content":""}'
+        mReply = Message()
+        #mReply = simplejson.loads(stringReply, object_hook=_json_object_hook)
+        mReply.__dict__ = simplejson.loads(stringReply)
+        print("Received by handler: " + stringReply + "\n")
         #Cleanup for errors received from client should be somewhere here.
         #Something like this: self.RegisteredMethods[message.Content].__init__()
-        MethodIdentifier = Procedure.Alphanumeric(message.Callback)
-        if message.MessageType.upper() == "COMMAND":
-            MethodUUID = self.InstantiateProcedure(MethodIdentifier)
-        else:
-            MethodUUID = MethodIdentifier
-        CurrentProcedure = self.dInstantiatedProcedures[MethodUUID]
-        reply = WorkingMethod(message)
-        reply_string = simplejson.dumps(reply.__dict__)
-        alive_socket.send(reply_string)
+        MethodIdentifier = Alphanumeric(mReply.Callback)
+        try:
+            if mReply.MessageType.upper() == Protocol.CMD:
+                    MethodUUID = self.InstantiateProcedure(MethodIdentifier)
+            else:
+                MethodUUID = MethodIdentifier
+
+            CurrentProcedure = self.dInstantiatedProcedures[MethodUUID]
+            mMessage = WorkingMethod(mReply)
+        except Exception, ex:
+            mMessage = self.ComposeErrorMessage(ex, MethodIdentifier)
+        stringReply = simplejson.dumps(mMessage.__dict__)
+        alive_socket.send(stringReply)
         #reply = {'MessageType':"Set Event", 'ContentType':"None", 'Content':"ObjectCreated", 'SerializedContent':'"ObjectCreated"'}
 
     def InstantiateProcedure(self, classname, *args, **kwargs):
@@ -105,3 +119,8 @@ class Handler2(object):
     @staticmethod
     def GenerateUuid():
         return str(uuid.uuid4())
+
+    @classmethod
+    def ComposeErrorMessage(cls, error, id):
+        message = Message(Protocol.SENDMSG, cls.ErrorMessages[type(error)].format(id), Protocol.FINISH)
+        return message

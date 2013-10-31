@@ -63,14 +63,14 @@ class OnCommandEnded(Procedure):
 def main():
     script, filename = init()
     print("Shadowbinder server starting...\n")
-    ExState = Handler2()
+    Interaction = Handler2()
 
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind(ALIVE_URL)
     io_loop = ioloop.IOLoop.instance()
-    io_loop.add_handler(socket, ExState.handler, io_loop.READ)
-    ExState.handler(socket)
+    io_loop.add_handler(socket, Interaction.Handler, io_loop.READ)
+    Interaction.Handler(socket)
     print("Started IO loop.\n")
     io_loop.start()
     print("Work complete.\n")
