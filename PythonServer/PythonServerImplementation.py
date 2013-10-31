@@ -10,7 +10,7 @@ import collections
 import time
 import zmq
 from zmq.eventloop import ioloop
-from MessageServer import Message, Handler, Handler2, Procedure
+from MessageServer import Message, Handler, Handler2, Procedure, Protocol
 
 ALIVE_URL = 'tcp://127.0.0.1:5556'
 

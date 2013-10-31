@@ -23,6 +23,7 @@ class Protocol(object):
     FINISH = "__FINISH__"
     CMD = "COMMAND"
     SENDMSG = "SENDMESSAGE"
+    REQUEST_USER_INPUT = "REQUEST_INPUT"
     Types = {
                 type(""):"STRING",
                 type([]):"LIST",
@@ -46,6 +47,7 @@ class Procedure(object):
     def __init__ (self):
         self.Objects = {}
         self.Uuid = ""
+        self.CurrentState = 0
         #self.Procedures[self.__class__.__name__] = self.__class__
     @classmethod
     def GetSubclassesDict(cls):
@@ -101,9 +103,8 @@ class Handler2(object):
                     MethodUUID = self.InstantiateProcedure(MethodIdentifier)
             else:
                 MethodUUID = MethodIdentifier
-
-            CurrentProcedure = self.dInstantiatedProcedures[MethodUUID]
-            mMessage = WorkingMethod(mReply)
+            WorkerProcedure = self.dInstantiatedProcedures[MethodUUID]
+            mMessage = WorkerProcedure(mReply)
         except Exception, ex:
             mMessage = self.ComposeErrorMessage(ex, MethodIdentifier)
         stringReply = simplejson.dumps(mMessage.__dict__)
