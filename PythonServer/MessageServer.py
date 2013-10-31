@@ -16,10 +16,8 @@ import uuid
 
 def _json_object_hook(d): return namedtuple('Message', d.keys())(*d.values())
 
-
-
-def GenerateUuid():
-    return str(uuid.uuid4())
+def Alphanumeric(string):
+    return "".join([x if x.isalnum() else "" for x in string.upper()])
 
 class Message(object):
     Types = {
@@ -47,9 +45,6 @@ class Procedure(object):
     @classmethod
     def GetSubclassesDict(cls):
         return {Alphanumeric(x.__name__):x for x in cls.__subclasses__()}
-    @staticmethod
-    def Alphanumeric(string):
-        return "".join([x if x.isalnum() else "" for x in string.upper()])
     
 
 class MessageEncoder(JSONEncoder):
@@ -80,9 +75,9 @@ class Handler(object):
 
 class Handler2(object):
     def __init__(self):
-        self.dInteractions = {}
+        self.dInstantiatedProcedures = {}
         self.dRegisteredProcedures = Procedure.GetSubclassesDict()
-    def handler(self, alive_socket, *args, **kwargs):
+    def Handler(self, alive_socket, *args, **kwargs):
         #message_string = alive_socket.recv().decode("utf_16")
         message_string = u'{"MessageType":"COMMAND","ContentType":"NONE","Callback":"REPENT","Content":""}'
         message = Message()
@@ -92,13 +87,21 @@ class Handler2(object):
         #Something like this: self.RegisteredMethods[message.Content].__init__()
         MethodIdentifier = Procedure.Alphanumeric(message.Callback)
         if message.MessageType.upper() == "COMMAND":
-            MethodUUID = Procedure.Alphanumeric(GenerateUuid())
-            self.dInteractions[MethodUUID] = ProcedureFactory.Instantiate(self.dRegisteredProcedures[MethodIdentifier]) #??
+            MethodUUID = self.InstantiateProcedure(MethodIdentifier)
         else:
             MethodUUID = MethodIdentifier
-        
-        WorkingMethod = self.RegisteredMethods[message.Callback]
+        CurrentProcedure = self.dInstantiatedProcedures[MethodUUID]
         reply = WorkingMethod(message)
         reply_string = simplejson.dumps(reply.__dict__)
         alive_socket.send(reply_string)
         #reply = {'MessageType':"Set Event", 'ContentType':"None", 'Content':"ObjectCreated", 'SerializedContent':'"ObjectCreated"'}
+
+    def InstantiateProcedure(self, classname, *args, **kwargs):
+        cls = self.dRegisteredProcedures[classname]
+        uuid = Alphanumeric(self.GenerateUuid())
+        self.dInstantiatedProcedures[uuid] = cls(*args, **kwargs)
+        return uuid
+
+    @staticmethod
+    def GenerateUuid():
+        return str(uuid.uuid4())
