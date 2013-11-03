@@ -110,7 +110,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
     <Compile Include="SocketWrapper.cs" />
     <Compile Include="PythonClientCommands.Designer.cs">
       <AutoGen>True</AutoGen>
