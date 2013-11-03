@@ -29,7 +29,7 @@ ALIVE_URL = 'tcp://127.0.0.1:5556'
 def init():
     return argv
 
-class Repent(Procedure):
+class Handshake(Procedure):
 
     #def __call__( self, message = Message() ):
     #    reply = self.StateDict[self.CurrentState](message)
@@ -37,17 +37,36 @@ class Repent(Procedure):
 
     @state(0)
     def state0(self, reply):
-        message = Message(Action = "REQUEST_INPUT", Payload = "STRING", Callback = "REPENT")
-        message = self.GetStringInput("Nigga please")
-        #make reply, in which ask client for user input
-        #self.CurrentState += 1
+        #message = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT)
+        message = Handler.NewGetUserStringMessage("Hello AutoCAD")
+        message.Parameters["AllowSpaces"] = False
+        message.Finalize()
         return message
 
-    @state(1)
-    def state1(self, message):
-        reply = message #this is a stub
-        #do actual work with user input supposedly received in message
-        return reply
+#    @state(1)
+#    def state1(self, message):
+#        reply = message #this is a stub
+#        #do actual work with user input supposedly received in message
+#        return reply
+
+class Inform(Procedure):
+
+    #def __call__( self, message = Message() ):
+    #    reply = self.StateDict[self.CurrentState](message)
+    #    return reply
+
+    @state(0)
+    def state0(self, reply):
+        #message = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT)
+        message = Handler.NewWriteMessage("Hello AutoCAD")
+        message.Finalize()
+        return message
+
+#    @state(1)
+#    def state1(self, message):
+#        reply = message #this is a stub
+#        #do actual work with user input supposedly received in message
+#        return reply
 
 class OnCommandEnded(Procedure):
     def __init__( self ):

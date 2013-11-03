@@ -19,10 +19,19 @@ def _json_object_hook(d): return namedtuple('Message', d.keys())(*d.values())
 def Alphanumeric(string):
     return "".join([x if x.isalnum() else "" for x in string.upper()])
 
+def GenerateUuid():
+    return str(uuid.uuid4())
+
+class StateSequenceError(Exception):
+     def __init__(self, value):
+         self.value = value
+     def __str__(self):
+         return self.value
+
 def state(statenum):
     def decorator (f):
         f.func_dict['state'] = statenum
-        @wraps(f)   # In order to preserve docstrings, etc.
+        @wraps(f)
         def wrapped (self, *args, **kwargs):
             f.state = statenum
             return f(self, *args, **kwargs)
@@ -38,9 +47,9 @@ class Protocol(object):
         CONTINUE = "CONTINUE"
         CONSOLE = "CONSOLE"
 
-    class SAction:
+    class ServerAction:
         SETEVENT = "SET_EVENT"
-        SENDMSG = "SENDMESSAGE"
+        WRITE = "WRITE_MESSAGE"
         REQUEST_USER_INPUT = "REQUEST_INPUT"
         REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS"
         MANIPULATE = "MANIPULATE_DB"
@@ -77,6 +86,8 @@ class Message(object):
         #self.SerializedContent = simplejson.dumps(Content)
         self.Callback = Callback
         self.Status = Status
+    def Finalize(self):
+        self.Status = Protocol.Status.FINISH
 
 
 class Procedure(object):
@@ -88,19 +99,19 @@ class Procedure(object):
         self.StateDict = dict([(getattr(self,method).state, getattr(self,method)) for method in dir(self) if hasattr(getattr(self, method), 'state')])
         #self.StateDict = {methodname: value for me}
     def __call__( self, message = Message() ):
-        reply = self.StateDict[self.CurrentState](message)
-        self.CurrentState += 1
+        if self.CurrentState in self.StateDict:
+            reply = self.StateDict[self.CurrentState](message)
+            self.CurrentState += 1
+        else:
+            raise StateSequenceError(0)
+            reply = Handler.NewErrorMessage(StateSequenceError, message.Callback)
         return reply
+
 
     @classmethod
     def GetSubclassesDict(cls):
         return {Alphanumeric(x.__name__):x for x in cls.__subclasses__()}
 
-    def GetStringInput(self, request_string):
-        """Forms a message for single user input request
-        """
-        msg = Message(Action = Protocol.SAction.REQUEST_USER_INPUT, Callback = self.Uuid, Status = Protocol.Status.ON_HOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = request_string)
-        return msg
 
     
 
@@ -112,10 +123,12 @@ class MessageEncoder(JSONEncoder):
                 "Payload": o.Payload,
                 "Callback": o.Callback
                 }
+
 class Handler(object):
     ErrorMessages = {
-                     KeyError: "Command {} was not recognized by server",
-                     NotImplementedError: "Command {} is not implemented yet",
+                     KeyError: "Command {} was not recognized by server. Command aborted.",
+                     NotImplementedError: "Command {} is not implemented yet.",
+                     StateSequenceError: "Command {} is missing a well-formed state.",
                      }
     def __init__(self):
         self.dInstantiatedProcedures = {}
@@ -133,28 +146,40 @@ class Handler(object):
         try:
             if mReply.Action.upper() == Protocol.CAction.CMD:
                     MethodUUID = self.InstantiateProcedure(MethodIdentifier)
+                    self.dInstantiatedProcedures[MethodUUID].Uuid = MethodUUID
             else:
                 MethodUUID = MethodIdentifier
             WorkerProcedure = self.dInstantiatedProcedures[MethodUUID]
             mMessage = WorkerProcedure(mReply)
             mMessage.Callback = MethodUUID
         except Exception, ex:
-            mMessage = self.ComposeErrorMessage(ex, MethodIdentifier)
+            mMessage = self.NewErrorMessage(ex, MethodIdentifier)
         stringReply = simplejson.dumps(mMessage.__dict__)
         alive_socket.send(stringReply)
         #reply = {'Action':"Set Event", 'ContentType':"None", 'Content':"ObjectCreated", 'SerializedContent':'"ObjectCreated"'}
 
     def InstantiateProcedure(self, classname, *args, **kwargs):
         cls = self.dRegisteredProcedures[classname]
-        uuid = Alphanumeric(self.GenerateUuid())
+        uuid = Alphanumeric(GenerateUuid())
         self.dInstantiatedProcedures[uuid] = cls(*args, **kwargs)
         return uuid
 
-    @staticmethod
-    def GenerateUuid():
-        return str(uuid.uuid4())
 
     @classmethod
-    def ComposeErrorMessage(cls, error, id):
-        message = Message(Action = Protocol.SAction.SENDMSG, Payload = cls.ErrorMessages[type(error)].format(id), Status = Protocol.Status.FINISH)
+    def NewErrorMessage(cls, error, id):
+        message = Message(Action = Protocol.ServerAction.WRITE, Payload = cls.ErrorMessages[type(error)].format(id), Status = Protocol.Status.FINISH)
         return message
+
+    @classmethod
+    def NewGetUserStringMessage(cls, request_string):
+        """Forms a message for single user input request
+        """
+        msg = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = request_string)
+        return msg
+
+    @classmethod
+    def NewWriteMessage(cls, str):
+        """Forms a messah=ge writing str to client's standard output
+        """
+        msg = Message(Action = Protocol.ServerAction.WRITE, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = str)
+        return msg

@@ -9,19 +9,19 @@ namespace ShadowbinderClient
     public class PythonCommands
     {
 
-        [CommandMethod("REPENT")]
+        [CommandMethod("Handshake")]
         public void Repent()
         {
             SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD();
-            SocketMessage Message = Protocol.NewCommand("REPENT");
+            SocketMessage Message = Protocol.NewCommand("Handshake");
             Transport.CommandLoop(Session, Message);
         }
 
-        [CommandMethod("SHADOWBIND")]
+        [CommandMethod("Inform")]
         public void Shadowbind()
         {
             SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD();
-            SocketMessage Message = Protocol.NewCommand("SHADOWBIND");
+            SocketMessage Message = Protocol.NewCommand("Inform");
             Transport.CommandLoop(Session, Message);
         }
     }

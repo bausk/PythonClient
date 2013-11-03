@@ -86,7 +86,7 @@ namespace SocketWrapper
         {
             //server-issued action lines
             public const string SETEVENT = "SET_EVENT";
-            public const string SENDMSG = "SENDMESSAGE";
+            public const string WRITE = "WRITE_MESSAGE";
             public const string REQUEST_USER_INPUT = "REQUEST_INPUT";
             public const string REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS";
             public const string MANIPULATE = "MANIPULATE_DB";
@@ -207,8 +207,8 @@ namespace SocketWrapper
             doc = Application.DocumentManager.MdiActiveDocument;
             db = doc.Database;
             ed = doc.Editor;
-            Transport.SendTimeout = 10;
-            Transport.ReceiveTimeout = 10;
+            Transport.SendTimeout = 1;
+            Transport.ReceiveTimeout = 1;
             Transport.Port = 5556;
         }
 
@@ -224,6 +224,9 @@ namespace SocketWrapper
                     break;
                 case Protocol.SAction.REQUEST_USER_INPUT:
                     message = this.GetUserInput(reply);
+                    break;
+                case Protocol.SAction.WRITE:
+                    message = this.Write(reply);
                     break;
                 default:
                     message = new SocketMessage(Protocol.CAction.ERROR, Protocol.Status.FINISH);
@@ -255,6 +258,14 @@ namespace SocketWrapper
             return message;
         }
 
+        private SocketMessage Write(SocketMessage reply)
+        {
+
+            ed.WriteMessage((string) reply.Payload);
+            SocketMessage message = new SocketMessage(Protocol.CAction.CONTINUE);
+            return message;
+        }
+
         private SocketMessage SetEvent(SocketMessage reply)
         {
             this.db.ObjectAppended += new ObjectEventHandler(OnObjectCreated);
@@ -273,6 +284,8 @@ namespace SocketWrapper
             message.Action = "OK";
             return new SocketMessage();
         }
+
+
 
         public void OnObjectCreated(object sender, ObjectEventArgs e)
         {
