@@ -10,21 +10,21 @@ import collections
 import time
 import zmq
 from zmq.eventloop import ioloop
-from MessageServer import Message, Handler, Handler2, Procedure, Protocol, state
+from MessageServer import Message, Handler, Procedure, Protocol, state
 #from test_decorator_tracker import *
 
 ALIVE_URL = 'tcp://127.0.0.1:5556'
 
 #class Message(object):
-#    def __init__(self, MessageType, ContentType, Content):
-#        self.MessageType = MessageType
+#    def __init__(self, Action, ContentType, Content):
+#        self.Action = Action
 #        self.ContentType = ContentType
 #        self.Content = Content
 #    def as_message(dct):
-#        return Message(dct['MessageType'], dct['ContentType'], dct['Content'])
+#        return Message(dct['Action'], dct['ContentType'], dct['Content'])
 
 #def as_message(dct):
-#    return Message(dct['MessageType'], dct['ContentType'], dct['Content'])
+#    return Message(dct['Action'], dct['ContentType'], dct['Content'])
 
 def init():
     return argv
@@ -36,11 +36,12 @@ class Repent(Procedure):
     #    return reply
 
     @state(0)
-    def state0(self, message):
-        reply = Message(MessageType = "REQUEST_INPUT", Content = "STRING", Callback = "REPENT")
+    def state0(self, reply):
+        message = Message(Action = "REQUEST_INPUT", Payload = "STRING", Callback = "REPENT")
+        message = self.GetStringInput("Nigga please")
         #make reply, in which ask client for user input
         #self.CurrentState += 1
-        return reply
+        return message
 
     @state(1)
     def state1(self, message):
@@ -62,14 +63,14 @@ class OnCommandEnded(Procedure):
 def main():
     script, filename = init()
     print("Shadowbinder server starting...\n")
-    Interaction = Handler2()
+    Interaction = Handler()
 
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind(ALIVE_URL)
     io_loop = ioloop.IOLoop.instance()
     io_loop.add_handler(socket, Interaction.Handler, io_loop.READ)
-    Interaction.Handler(socket)
+    #Interaction.Handler(socket)
     print("Started IO loop.\n")
     io_loop.start()
     print("Work complete.\n")

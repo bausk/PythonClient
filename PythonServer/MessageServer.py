@@ -30,11 +30,35 @@ def state(statenum):
     return decorator
 
 class Protocol(object):
-    FINISH = "__FINISH__"
-    CMD = "COMMAND"
-    SENDMSG = "SENDMESSAGE"
-    REQUEST_USER_INPUT = "REQUEST_INPUT"
+
+    class CAction:
+        CMD = "COMMAND"
+        ERROR = "CLIENT_ERROR"
+        EVENT = "EVENT"
+        CONTINUE = "CONTINUE"
+        CONSOLE = "CONSOLE"
+
+    class SAction:
+        SETEVENT = "SET_EVENT"
+        SENDMSG = "SENDMESSAGE"
+        REQUEST_USER_INPUT = "REQUEST_INPUT"
+        REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS"
+        MANIPULATE = "MANIPULATE_DB"
+        TERMINATE = "TERMINATE_SESSION"
+
+    class Status:
+        FINISH = "_FINISH"
+        OK = "_OK"
+        ONHOLD = "_ONHOLD"
+        
+
+    #Payload types
+    PL_STRING = 1
+    PL_ENTITIES = 2
+
+    #types
     Types = {
+                type(0):"INT",
                 type(""):"STRING",
                 type([]):"LIST",
                 type({}):"DICTIONARY",
@@ -43,13 +67,16 @@ class Protocol(object):
                 }
 
 
+
 class Message(object):
-    def __init__( self, MessageType = "", Content = None, Callback = ""):
-        self.MessageType = MessageType
-        self.ContentType = Protocol.Types[type(Content)]
-        self.Content = Content
+    def __init__( self, Action = None, Payload = None, Callback = None, Status = None, Parameters = None):
+        self.Action = Action
+        self.ContentType = Protocol.Types[type(Payload)]
+        self.Parameters = Parameters
+        self.Payload = Payload
         #self.SerializedContent = simplejson.dumps(Content)
         self.Callback = Callback
+        self.Status = Status
 
 
 class Procedure(object):
@@ -68,35 +95,24 @@ class Procedure(object):
     @classmethod
     def GetSubclassesDict(cls):
         return {Alphanumeric(x.__name__):x for x in cls.__subclasses__()}
+
+    def GetStringInput(self, request_string):
+        """Forms a message for single user input request
+        """
+        msg = Message(Action = Protocol.SAction.REQUEST_USER_INPUT, Callback = self.Uuid, Status = Protocol.Status.ON_HOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = request_string)
+        return msg
+
     
 
 class MessageEncoder(JSONEncoder):
     def default(self, o):
         return {
-                "MessageType": o.MessageType,
+                "Action": o.Action,
                 "ContentType": o.ContentType,
-                "Content": o.Content,
+                "Payload": o.Payload,
                 "Callback": o.Callback
                 }
-
 class Handler(object):
-    def __init__( self , reg):
-        self.RegisteredMethods = reg
-            
-    def handler(self, alive_socket, *args, **kwargs):
-        message_string = alive_socket.recv().decode("utf_16")
-        message = Message()
-        message = simplejson.loads(message_string, object_hook=_json_object_hook)
-        print("Received by handler: " + message_string + "\n")
-        #Cleanup for errors received from client should be somewhere here.
-        #Something like this: self.RegisteredMethods[message.Content].__init__()
-        WorkingMethod = self.RegisteredMethods[message.Callback]
-        reply = WorkingMethod(message)
-        reply_string = simplejson.dumps(reply.__dict__)
-        alive_socket.send(reply_string)
-        #reply = {'MessageType':"Set Event", 'ContentType':"None", 'Content':"ObjectCreated", 'SerializedContent':'"ObjectCreated"'}
-
-class Handler2(object):
     ErrorMessages = {
                      KeyError: "Command {} was not recognized by server",
                      NotImplementedError: "Command {} is not implemented yet",
@@ -105,8 +121,8 @@ class Handler2(object):
         self.dInstantiatedProcedures = {}
         self.dRegisteredProcedures = Procedure.GetSubclassesDict()
     def Handler(self, alive_socket, *args, **kwargs):
-        #message_string = alive_socket.recv().decode("utf_16")
-        stringReply = u'{"MessageType":"COMMAND","ContentType":"NONE","Callback":"REPENT","Content":""}'
+        stringReply = alive_socket.recv().decode("utf_16")
+        #stringReply = u'{"Action":"COMMAND","ContentType":"NONE","Callback":"REPENT","Content":""}'
         mReply = Message()
         #mReply = simplejson.loads(stringReply, object_hook=_json_object_hook)
         mReply.__dict__ = simplejson.loads(stringReply)
@@ -115,17 +131,18 @@ class Handler2(object):
         #Something like this: self.RegisteredMethods[message.Content].__init__()
         MethodIdentifier = Alphanumeric(mReply.Callback)
         try:
-            if mReply.MessageType.upper() == Protocol.CMD:
+            if mReply.Action.upper() == Protocol.CAction.CMD:
                     MethodUUID = self.InstantiateProcedure(MethodIdentifier)
             else:
                 MethodUUID = MethodIdentifier
             WorkerProcedure = self.dInstantiatedProcedures[MethodUUID]
             mMessage = WorkerProcedure(mReply)
+            mMessage.Callback = MethodUUID
         except Exception, ex:
             mMessage = self.ComposeErrorMessage(ex, MethodIdentifier)
         stringReply = simplejson.dumps(mMessage.__dict__)
         alive_socket.send(stringReply)
-        #reply = {'MessageType':"Set Event", 'ContentType':"None", 'Content':"ObjectCreated", 'SerializedContent':'"ObjectCreated"'}
+        #reply = {'Action':"Set Event", 'ContentType':"None", 'Content':"ObjectCreated", 'SerializedContent':'"ObjectCreated"'}
 
     def InstantiateProcedure(self, classname, *args, **kwargs):
         cls = self.dRegisteredProcedures[classname]
@@ -139,5 +156,5 @@ class Handler2(object):
 
     @classmethod
     def ComposeErrorMessage(cls, error, id):
-        message = Message(Protocol.SENDMSG, cls.ErrorMessages[type(error)].format(id), Protocol.FINISH)
+        message = Message(Action = Protocol.SAction.SENDMSG, Payload = cls.ErrorMessages[type(error)].format(id), Status = Protocol.Status.FINISH)
         return message
