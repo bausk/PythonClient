@@ -43,6 +43,13 @@ class Handshake(Procedure):
         message.Finalize()
         return message
 
+    @state(1)
+    def state0(self, reply):
+        #message = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT)
+        message = Handler.NewGetUserStringMessage("Hello AutoCAD")
+        message.Parameters["AllowSpaces"] = False
+        message.Finalize()
+        return message
 #    @state(1)
 #    def state1(self, message):
 #        reply = message #this is a stub
