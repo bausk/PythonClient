@@ -54,6 +54,7 @@ class Protocol(object):
         REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS"
         MANIPULATE = "MANIPULATE_DB"
         TERMINATE = "TERMINATE_SESSION"
+        GET_ENTITY = "GET_ENTITY"
 
     class Status:
         FINISH = "_FINISH"
@@ -106,7 +107,6 @@ class Procedure(object):
             raise StateSequenceError(0)
             reply = Handler.NewErrorMessage(StateSequenceError, message.Callback)
         return reply
-
 
     @classmethod
     def GetSubclassesDict(cls):

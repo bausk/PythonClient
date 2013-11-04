@@ -91,6 +91,7 @@ namespace SocketWrapper
             public const string REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS";
             public const string MANIPULATE = "MANIPULATE_DB";
             public const string TERMINATE = "TERMINATE_SESSION";
+            public const string GET_ENTITY = "GET_ENTITY";
         }
 
         //status lines
@@ -228,6 +229,9 @@ namespace SocketWrapper
                 case Protocol.SAction.WRITE:
                     message = this.Write(reply);
                     break;
+                case Protocol.SAction.GET_ENTITY:
+                    message = this.GetEntity(reply);
+                    break;
                 default:
                     message = new SocketMessage(Protocol.CAction.ERROR, Protocol.Status.FINISH);
                     //returnValue = "END";
@@ -257,6 +261,28 @@ namespace SocketWrapper
             message.AddPayload(pr.StringResult);
             return message;
         }
+
+        private SocketMessage GetEntity(SocketMessage reply)
+        {
+
+            PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
+            //bool value = true;
+            object value;
+            if (reply.Parameters.TryGetValue("AllowSpaces", out value))
+                pso.AllowSpaces = (bool)value;
+            else
+                pso.AllowSpaces = true;
+
+            PromptResult pr = ed.GetString(pso);
+
+            if (pr.Status != PromptStatus.OK)
+                return new SocketMessage(Protocol.CAction.ERROR, Protocol.Status.FINISH);
+
+            SocketMessage message = new SocketMessage(Protocol.CAction.CONTINUE);
+            message.AddPayload(pr.StringResult);
+            return message;
+        }
+
 
         private SocketMessage Write(SocketMessage reply)
         {

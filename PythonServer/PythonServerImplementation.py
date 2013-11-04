@@ -59,6 +59,7 @@ class Inform(Procedure):
     def state0(self, reply):
         #message = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT)
         message = Handler.NewWriteMessage("Hello AutoCAD")
+   
         message.Finalize()
         return message
 
