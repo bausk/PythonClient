@@ -44,6 +44,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -53,30 +54,33 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AcCoreMgd, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2013\accoremgd.dll</HintPath>
+      <HintPath>dlls\accoremgd.dll</HintPath>
     </Reference>
     <Reference Include="AcDbMgd, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2013\acdbmgd.dll</HintPath>
+      <HintPath>dlls\acdbmgd.dll</HintPath>
     </Reference>
     <Reference Include="AcMgd, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2013\acmgd.dll</HintPath>
+      <HintPath>dlls\acmgd.dll</HintPath>
     </Reference>
     <Reference Include="Autodesk.AutoCAD.Interop.Common, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
+      <HintPath>dlls\Autodesk.AutoCAD.Interop.Common.dll</HintPath>
     </Reference>
     <Reference Include="Autodesk.AutoCAD.Interop, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
+      <HintPath>dlls\Autodesk.AutoCAD.Interop.dll</HintPath>
     </Reference>
     <!--ACA References Begin-->
     <!--ACA Refences End-->
@@ -110,17 +114,21 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SocketWrapper.cs" />
-    <Compile Include="PythonClientCommands.Designer.cs">
+    <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>PythonClientCommands.resx</DependentUpon>
+      <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="SocketWrapper.cs" />
     <Compile Include="PythonClient.cs" />
     <Compile Include="PythonClientCommands.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="PythonClientCommands.resx">
       <DependentUpon>PythonClientCommands.cs</DependentUpon>
       <Generator>ResXFileCodeGenerator</Generator>
