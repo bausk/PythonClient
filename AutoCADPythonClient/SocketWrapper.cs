@@ -72,7 +72,7 @@ namespace SocketWrapper
 
     public static class Protocol
     {
-        public struct CAction
+        public struct ClientAction
         {
             //client-issued action lines
             public const string CMD = "COMMAND";
@@ -82,16 +82,20 @@ namespace SocketWrapper
             public const string CONSOLE = "CONSOLE";
         }
 
-        public struct SAction
+        public struct ServerAction
         {
             //server-issued action lines
             public const string SETEVENT = "SET_EVENT";
             public const string WRITE = "WRITE_MESSAGE";
             public const string REQUEST_USER_INPUT = "REQUEST_INPUT";
             public const string REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS";
-            public const string MANIPULATE = "MANIPULATE_DB";
             public const string TERMINATE = "TERMINATE_SESSION";
-            public const string GET_ENTITY = "GET_ENTITY";
+            public const string GET_ENTITY_ID = "GET_ENTITY";
+            public const string TRANSACTION_START = "TRANSACTION_START";
+            public const string TRANSACTION_COMMIT = "TRANSACTION_COMMIT";
+            public const string TRANSACTION_ABORT = "TRANSACTION_ABORT";
+            public const string TRANSACTION_GETOBJECT = "TR_GET_OBJECT";
+            public const string TRANSACTION_MANIPULATE_DB = "TR_MANIPULATE_DB";
         }
 
         //status lines
@@ -132,7 +136,7 @@ namespace SocketWrapper
         }
         public static bool CheckForTermination(SocketMessage Reply)
         {
-            if (Reply.Action == Protocol.SAction.TERMINATE)
+            if (Reply.Action == Protocol.ServerAction.TERMINATE)
                 return true;
             else
                 return false;
@@ -141,7 +145,7 @@ namespace SocketWrapper
         //client command factories
         public static SocketMessage NewCommand(string Name)
         {
-            return new SocketMessage(Protocol.CAction.CMD, Protocol.Status.OK, Name);
+            return new SocketMessage(Protocol.ClientAction.CMD, Protocol.Status.OK, Name);
         }
         public static SocketMessage NewReply()
         {
@@ -150,25 +154,25 @@ namespace SocketWrapper
         
     }
 
-    public static class Transport
+    public class Transport
     {
-        public static int SendTimeout { get; set; }
-        public static int ReceiveTimeout { get; set; }
-        public static int Port { get; set; }  
+        public int SendTimeout { get; set; }
+        public int ReceiveTimeout { get; set; }
+        public int Port { get; set; }  
   
-        public static SocketMessage SendMessage(ZmqSocket client, SocketMessage message)
+        public SocketMessage SendMessage(ZmqSocket client, SocketMessage message)
         {
             SocketMessage response = new SocketMessage();
-            client.Connect("tcp://localhost:" + Transport.Port.ToString());
-            client.SendTimeout = new TimeSpan(0, 0, Transport.SendTimeout);
-            client.ReceiveTimeout = new TimeSpan(0, 0, Transport.ReceiveTimeout);
+            client.Connect("tcp://localhost:" + this.Port.ToString());
+            client.SendTimeout = new TimeSpan(0, 0, this.SendTimeout);
+            client.ReceiveTimeout = new TimeSpan(0, 0, this.ReceiveTimeout);
             string SerializedMessage = JsonConvert.SerializeObject(message);
             client.Send(SerializedMessage, Encoding.Unicode);
             if (Protocol.CheckForClientExit(message))
             {
                 //Client exits without waiting for reply
                 //bypass client.Receive. Emulate server exit to break dispatch loop
-                response.Action = Protocol.SAction.TERMINATE;
+                response.Action = Protocol.ServerAction.TERMINATE;
             }
             else
             {
@@ -179,7 +183,7 @@ namespace SocketWrapper
             return response;
         }
 
-        public static void CommandLoop(SocketWrapper.AutoCAD Session, SocketMessage Message)
+        public void CommandLoop(SocketWrapper.AutoCAD Session, SocketMessage Message)
         {
             SocketMessage Reply = Protocol.NewReply(); 
             bool exitflag = false;
@@ -188,7 +192,7 @@ namespace SocketWrapper
             {
                 do
                 {
-                    Reply = Transport.SendMessage(client, Message);
+                    Reply = this.SendMessage(client, Message);
                     exitflag = Protocol.CheckForTermination(Reply); //client stops without doing any work
                     if (!exitflag)
                     {
@@ -203,14 +207,14 @@ namespace SocketWrapper
     
     public class AutoCAD
     {
-        public AutoCAD()
+        public AutoCAD(Transport transport)
         {
             doc = Application.DocumentManager.MdiActiveDocument;
             db = doc.Database;
             ed = doc.Editor;
-            Transport.SendTimeout = 1;
-            Transport.ReceiveTimeout = 1;
-            Transport.Port = 5556;
+            transport.SendTimeout = 1;
+            transport.ReceiveTimeout = 1;
+            transport.Port = 5556;
         }
 
         public SocketMessage DispatchReply(SocketMessage reply)
@@ -218,26 +222,35 @@ namespace SocketWrapper
             SocketMessage message = new SocketMessage();
             switch (reply.Action)
             {
-                case Protocol.SAction.SETEVENT:
+                case Protocol.ServerAction.SETEVENT:
                     message = this.SetEvent(reply);
                     break;
-                case Protocol.SAction.MANIPULATE:
-                    break;
-                case Protocol.SAction.REQUEST_USER_INPUT:
+                case Protocol.ServerAction.REQUEST_USER_INPUT:
                     message = this.GetUserInput(reply);
                     break;
-                case Protocol.SAction.WRITE:
+                case Protocol.ServerAction.WRITE:
                     message = this.Write(reply);
                     break;
-                case Protocol.SAction.GET_ENTITY:
+                case Protocol.ServerAction.GET_ENTITY_ID:
                     message = this.GetEntity(reply);
                     break;
+                case Protocol.ServerAction.TRANSACTION_START:
+                    message = this.Transaction(reply);
+                    break;
+                case Protocol.ServerAction.TRANSACTION_GETOBJECT:
+                    break;
+                case Protocol.ServerAction.TRANSACTION_MANIPULATE_DB:
+                    break;
+                case Protocol.ServerAction.TRANSACTION_COMMIT:
+                    message = new SocketMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
+                    break;
+                case Protocol.ServerAction.TRANSACTION_ABORT:
+                    break;
                 default:
-                    message = new SocketMessage(Protocol.CAction.ERROR, Protocol.Status.FINISH);
-                    //returnValue = "END";
+                    message = new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
                     break;
             }
-            message.Callback = reply.Callback;
+            message.Callback = reply.Callback; //highly doubtful we should do it here
             return message;
         }
 
@@ -255,9 +268,9 @@ namespace SocketWrapper
             PromptResult pr = ed.GetString(pso);
 
             if (pr.Status != PromptStatus.OK)
-                return new SocketMessage(Protocol.CAction.ERROR, Protocol.Status.FINISH);
+                return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
 
-            SocketMessage message = new SocketMessage(Protocol.CAction.CONTINUE);
+            SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
             message.AddPayload(pr.StringResult);
             return message;
         }
@@ -276,9 +289,30 @@ namespace SocketWrapper
             PromptResult pr = ed.GetString(pso);
 
             if (pr.Status != PromptStatus.OK)
-                return new SocketMessage(Protocol.CAction.ERROR, Protocol.Status.FINISH);
+                return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
 
-            SocketMessage message = new SocketMessage(Protocol.CAction.CONTINUE);
+            SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
+            message.AddPayload(pr.StringResult);
+            return message;
+        }
+
+        private SocketMessage Transaction(SocketMessage reply)
+        {
+
+            PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
+            //bool value = true;
+            object value;
+            if (reply.Parameters.TryGetValue("AllowSpaces", out value))
+                pso.AllowSpaces = (bool)value;
+            else
+                pso.AllowSpaces = true;
+
+            PromptResult pr = ed.GetString(pso);
+
+            if (pr.Status != PromptStatus.OK)
+                return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+
+            SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
             message.AddPayload(pr.StringResult);
             return message;
         }
@@ -288,7 +322,7 @@ namespace SocketWrapper
         {
 
             ed.WriteMessage((string) reply.Payload);
-            SocketMessage message = new SocketMessage(Protocol.CAction.CONTINUE);
+            SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
             return message;
         }
 

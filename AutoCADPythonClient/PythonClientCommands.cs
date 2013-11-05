@@ -1,5 +1,8 @@
 ﻿using Autodesk.AutoCAD.Runtime;
 using SocketWrapper;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
 
 // This line is not mandatory, but improves loading performances
 [assembly: CommandClass(typeof(ShadowbinderClient.PythonCommands))]
@@ -12,7 +15,8 @@ namespace ShadowbinderClient
         [CommandMethod("Handshake")]
         public void Repent()
         {
-            SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD();
+            SocketWrapper.Transport Transport = new SocketWrapper.Transport(); 
+            SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD(Transport);
             SocketMessage Message = Protocol.NewCommand("Handshake");
             Transport.CommandLoop(Session, Message);
         }
@@ -20,9 +24,22 @@ namespace ShadowbinderClient
         [CommandMethod("Inform")]
         public void Shadowbind()
         {
-            SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD();
+            SocketWrapper.Transport Transport = new SocketWrapper.Transport();
+            SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD(Transport);
             SocketMessage Message = Protocol.NewCommand("Inform");
             Transport.CommandLoop(Session, Message);
         }
+
+        [CommandMethod("ServerSE")]
+        public void ServerSE()
+        {
+            SocketWrapper.Transport Transport = new SocketWrapper.Transport();
+            SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD(Transport);
+            SocketWrapper.SocketMessage Message = Protocol.NewCommand("ServerSE");
+            Transport.CommandLoop(Session, Message);
+        }
+
+
     }
+
 }

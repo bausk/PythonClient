@@ -54,7 +54,10 @@ class Protocol(object):
         REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS"
         MANIPULATE = "MANIPULATE_DB"
         TERMINATE = "TERMINATE_SESSION"
-        GET_ENTITY = "GET_ENTITY"
+        GET_ENTITY_ID = "GET_ENTITY"
+        TRANSACTION_START = "TRANSACTION_START"
+        TRANSACTION_COMMIT = "TRANSACTION_COMMIT"
+        TRANSACTION_ABORT = "TRANSACTION_ABORT"
 
     class Status:
         FINISH = "_FINISH"
@@ -90,11 +93,40 @@ class Message(object):
     def Finalize(self):
         self.Status = Protocol.Status.FINISH
 
+class MessageFactory(object):
+    @classmethod
+    def Error(cls, error, id, ErrorMessages):
+        message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id), Status = Protocol.Status.FINISH)
+        return message
+
+    @classmethod
+    def GetUserString(cls, Prompt = None):
+        """Forms a message for single user input request. str Prompt is a command line message prompt.
+        """
+        msg = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = Prompt)
+        return msg
+
+    @classmethod
+    def Write(cls, str):
+        """Forms a message writing str to client's standard output
+        """
+        msg = Message(Action = Protocol.ServerAction.WRITE, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = str)
+        return msg
+
+    @classmethod
+    def GetObjectID(cls, *prompt):
+        """Request entity ID's with arguments as prompts.
+        """
+        payload = [str for str in prompt]
+        msg = Message(Action = Protocol.ServerAction.GET_ENTITY_ID, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = payload)
+        return msg
+
 
 class Procedure(object):
-    def __init__ (self):
+    def __init__ (self, Socket = None):
         self.Objects = {}
         self.Uuid = ""
+        self.Socket = Socket
         self.CurrentState = 0
         #methods = [method for method in dir(self) if hasattr(getattr(self, method), 'state')]
         self.StateDict = dict([(getattr(self,method).state, getattr(self,method)) for method in dir(self) if hasattr(getattr(self, method), 'state')])
@@ -105,7 +137,6 @@ class Procedure(object):
             self.CurrentState += 1
         else:
             raise StateSequenceError(0)
-            reply = Handler.NewErrorMessage(StateSequenceError, message.Callback)
         return reply
 
     @classmethod
@@ -133,7 +164,7 @@ class Handler(object):
     def __init__(self):
         self.dInstantiatedProcedures = {}
         self.dRegisteredProcedures = Procedure.GetSubclassesDict()
-    def Handler(self, alive_socket, *args, **kwargs):
+    def HandleReceiveLoop(self, alive_socket, *args, **kwargs):
         stringReply = alive_socket.recv().decode("utf_16")
         #stringReply = u'{"Action":"COMMAND","ContentType":"NONE","Callback":"REPENT","Content":""}'
         mReply = Message()
@@ -141,22 +172,24 @@ class Handler(object):
         mReply.__dict__ = simplejson.loads(stringReply)
         print("Received by handler: " + stringReply + "\n")
         #Cleanup for errors received from client should be somewhere here.
-        #Something like this: self.RegisteredMethods[message.Content].__init__()
+
         MethodIdentifier = Alphanumeric(mReply.Callback)
         try:
             if mReply.Action.upper() == Protocol.CAction.CMD:
-                    MethodUUID = self.InstantiateProcedure(MethodIdentifier)
+                    MethodUUID = self.InstantiateProcedure(MethodIdentifier, Socket = alive_socket)
                     self.dInstantiatedProcedures[MethodUUID].Uuid = MethodUUID
             else:
                 MethodUUID = MethodIdentifier
             WorkerProcedure = self.dInstantiatedProcedures[MethodUUID]
             mMessage = WorkerProcedure(mReply)
-            mMessage.Callback = MethodUUID
+            mMessage.Callback = MethodUUID #here? doubtful
         except Exception, ex:
-            mMessage = self.NewErrorMessage(ex, MethodIdentifier)
+            mMessage = self.NewErrorMessage(ex, MethodIdentifier, self.ErrorMessages)
         stringReply = simplejson.dumps(mMessage.__dict__)
         alive_socket.send(stringReply)
-        #reply = {'Action':"Set Event", 'ContentType':"None", 'Content':"ObjectCreated", 'SerializedContent':'"ObjectCreated"'}
+
+    def HandleSendLoop(self, alive_socket):
+        pass
 
     def InstantiateProcedure(self, classname, *args, **kwargs):
         cls = self.dRegisteredProcedures[classname]
@@ -166,15 +199,15 @@ class Handler(object):
 
 
     @classmethod
-    def NewErrorMessage(cls, error, id):
-        message = Message(Action = Protocol.ServerAction.WRITE, Payload = cls.ErrorMessages[type(error)].format(id), Status = Protocol.Status.FINISH)
+    def NewErrorMessage(cls, error, id, ErrorMessages):
+        message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id), Status = Protocol.Status.FINISH)
         return message
 
     @classmethod
-    def NewGetUserStringMessage(cls, request_string):
-        """Forms a message for single user input request
+    def NewGetUserStringMessage(cls, Prompt = None):
+        """Forms a message for single user input request. str Prompt is a command line message prompt.
         """
-        msg = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = request_string)
+        msg = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = Prompt)
         return msg
 
     @classmethod
