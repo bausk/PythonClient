@@ -79,8 +79,6 @@ class Protocol(object):
                 type(None):"NONE"
                 }
 
-
-
 class Message(object):
     def __init__( self, Action = None, Payload = None, Callback = None, Status = None, Parameters = None):
         self.Action = Action
@@ -120,6 +118,23 @@ class MessageFactory(object):
         payload = [str for str in prompt]
         msg = Message(Action = Protocol.ServerAction.GET_ENTITY_ID, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = payload)
         return msg
+
+class AutoCAD(object):
+
+    @classmethod
+    def GetUserString(cls, reply):
+        result = tuple(a for a in reply.payload)
+        return result
+
+    MethodsDict = {
+                   MessageFactory.GetUserString.func_name: GetUserString
+                   }
+
+    @classmethod
+    def Parse(cls, reply, func):
+        args = cls.MethodsDict[func](reply)
+
+        return args
 
 
 class Procedure(object):

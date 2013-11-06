@@ -55,7 +55,7 @@ class ServerSE(Procedure):
 
     @state(1)
     def state1(self, reply):
-        self.entity1, self.entity2 = parse(reply)
+        self.entity1, self.entity2 = MessageFactory.ParseReply(MessageFactory.GetObjectID)
         message = MessageFactory.GetObjectID("Hello AutoCAD")
    
         return message

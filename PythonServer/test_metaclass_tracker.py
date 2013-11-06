@@ -1,38 +1,23 @@
-class ChildTracker(type):
-  def __new__(cls, name, bases, dict_):
-    new_class = type.__new__(cls, name, bases, dict_)
-    # Check if this is the tracking class
-    if '__metaclass__' in dict_ and dict_['__metaclass__']==ChildTracker:
-      new_class.child_classes = {}
-    else:
-      # Add the new class to the set
-      bases[0].child_classes[name] = new_class
-      #cls
-    return new_class
+from MessageServer import MessageFactory
 
-
-class BaseClass(object):
-    __metaclass__ = ChildTracker
-    bbb = "fathah"
-    def __init__(self):
-        self.buehuehue = "huehuehue"
-    def aaa(self):
-        self.buehuehue += "... hehe"
-
-
-class Child1(BaseClass):
-    kkk = "child"
-    bbb = "child"
-    def __init__(self):
-        self.uhuehue = "uhuuhu"
-
-class Child2(BaseClass):
-    pass
+class AutoCAD(object):
+ 
+ 
+     def Parse(cls, reply, func):
+         args = cls.MethodsDict[func.func_name](cls, reply)
+ 
+         return args
+ 
+ 
+     def GetUserString(cls, reply):
+         result = tuple(a for a in reply)
+         return result
+ 
+     MethodsDict = {
+                    MessageFactory.GetUserString.func_name: GetUserString
+                    }
 
 
 
-print BaseClass.child_classes.keys()
-ke = Child2()
-ek = Child1()
-print ke
-print ek
+aa = AutoCAD()
+zzz = aa.Parse([1], MessageFactory.GetUserString)
