@@ -112,6 +112,12 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TestCommands.cs" />
+    <Compile Include="TestCommands.Designer.cs">
+      <DependentUpon>TestCommands.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
     <Compile Include="ReferenceFiler.cs" />
     <Compile Include="SocketWrapper.cs" />
     <Compile Include="PythonClientCommands.Designer.cs">
@@ -125,6 +131,11 @@
     <Compile Include="testPurgeDgn.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="TestCommands.resx">
+      <DependentUpon>TestCommands.cs</DependentUpon>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>TestCommands.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="PythonClientCommands.resx">
       <DependentUpon>PythonClientCommands.cs</DependentUpon>
       <Generator>ResXFileCodeGenerator</Generator>
