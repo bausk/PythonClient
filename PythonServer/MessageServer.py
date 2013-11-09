@@ -98,10 +98,10 @@ class MessageFactory(object):
         return message
 
     @classmethod
-    def GetUserString(cls, Prompt = None):
+    def GetUserString(cls, prompt = None):
         """Forms a message for single user input request. str Prompt is a command line message prompt.
         """
-        msg = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = Prompt)
+        msg = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = prompt)
         return msg
 
     @classmethod

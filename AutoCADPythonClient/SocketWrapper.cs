@@ -256,9 +256,10 @@ namespace SocketWrapper
 
         private SocketMessage GetUserInput(SocketMessage reply)
         {
+            //Figure out what to do
+
 
             PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
-            //bool value = true;
             object value;
             if (reply.Parameters.TryGetValue("AllowSpaces", out value))
                 pso.AllowSpaces = (bool) value;
@@ -277,7 +278,15 @@ namespace SocketWrapper
 
         private SocketMessage GetEntity(SocketMessage reply)
         {
-
+            List<string> Prompts = new List<string>();
+            if (reply.Payload is string)
+            {
+                Prompts.Add((string) reply.Payload);
+            }
+            else
+            {
+                Prompts = (List<string>) reply.Payload;
+            }
             PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
             //bool value = true;
             object value;
