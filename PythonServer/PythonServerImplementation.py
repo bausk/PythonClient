@@ -10,7 +10,7 @@ import collections
 import time
 import zmq
 from zmq.eventloop import ioloop
-from MessageServer import Message, MessageFactory, Handler, Procedure, Protocol, state
+from MessageServer import Message, MessageFactory, Handler, Procedure, Protocol, state, AutoCAD
 #from test_decorator_tracker import *
 
 ALIVE_URL = 'tcp://127.0.0.1:5556'
@@ -33,6 +33,7 @@ class Handshake(Procedure):
 
     @state(0)
     def state0(self, reply):
+
         message = MessageFactory.GetUserString(prompt = "Hello AutoCAD!")
         message.Parameters["AllowSpaces"] = False
         message.Finalize()
@@ -50,7 +51,10 @@ class ServerSE(Procedure):
 
     @state(0)
     def state0(self, reply):
-        message = MessageFactory.GetObjectID("Pick first entiry", "Pick second entity")
+        prompt1 = AutoCAD.GetPromptEntityOptions(Prompt = "Choose first entity")
+        prompt2 = AutoCAD.GetPromptEntityOptions()
+        PromptEntityOptions = [prompt1, prompt2]
+        message = MessageFactory.GetEntity(PromptEntityOptions)
         return message
 
     @state(1)

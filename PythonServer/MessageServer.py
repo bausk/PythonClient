@@ -40,7 +40,7 @@ def state(statenum):
 
 class Protocol(object):
 
-    class CAction:
+    class ClientAction:
         CMD = "COMMAND"
         ERROR = "CLIENT_ERROR"
         EVENT = "EVENT"
@@ -64,6 +64,10 @@ class Protocol(object):
         OK = "_OK"
         ONHOLD = "_ONHOLD"
         
+    class AutoCADKeywords:
+        Prompt = "Prompt"
+        AllowedClass = "AllowedClass"
+        RejectMessage = "RejectMessage"
 
     #Payload types
     PL_STRING = 1
@@ -101,6 +105,7 @@ class MessageFactory(object):
     def GetUserString(cls, prompt = None):
         """Forms a message for single user input request. str Prompt is a command line message prompt.
         """
+
         msg = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = prompt)
         return msg
 
@@ -119,7 +124,33 @@ class MessageFactory(object):
         msg = Message(Action = Protocol.ServerAction.GET_ENTITY_ID, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = payload)
         return msg
 
+    @classmethod
+    def GetEntity(cls, prompt):
+        """Request entity ID's with arguments as prompts.
+        """
+        
+        msg = Message(Action = Protocol.ServerAction.GET_ENTITY_ID, Status = Protocol.Status.ONHOLD, Parameters = prompt, Payload = None)
+        return msg
+
+
 class AutoCAD(object):
+
+    @classmethod
+    def GetPromptEntityOptions(cls, Prompt = None, AllowedClasses = None, RejectMessage = None):
+        dictionary = {}
+        if AllowedClasses == None:
+            pass
+        else:
+            dictionary[Protocol.AutoCADKeywords.AllowedClasses] = AllowedClasses
+        if Prompt == None:
+            pass
+        else:
+            dictionary[Protocol.AutoCADKeywords.Prompt] = Prompt
+        if RejectMessage == None:
+            pass
+        else:
+            dictionary[Protocol.AutoCADKeywords.RejectMessage] = RejectMessage
+        return dictionary
 
     @classmethod
     def GetUserString(cls, reply):
@@ -190,7 +221,7 @@ class Handler(object):
 
         MethodIdentifier = Alphanumeric(mReply.Callback)
         try:
-            if mReply.Action.upper() == Protocol.CAction.CMD:
+            if mReply.Action.upper() == Protocol.ClientAction.CMD:
                     MethodUUID = self.InstantiateProcedure(MethodIdentifier, Socket = alive_socket)
                     self.dInstantiatedProcedures[MethodUUID].Uuid = MethodUUID
             else:

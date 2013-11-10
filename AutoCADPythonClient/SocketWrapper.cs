@@ -64,7 +64,7 @@ namespace SocketWrapper
         public string ContentType { get; set; }
         public string Callback { get; set; }
         public string Status { get; set; }
-        public Dictionary<string, object> Parameters { get; set; }
+        public object Parameters { get; set; }
         //public string SerializedContent { get; set; }
         public object Payload { get; set; }
 
@@ -118,6 +118,14 @@ namespace SocketWrapper
             {typeof(List<>), "LIST"},
             {typeof(Dictionary), "DICTIONARY"},
             {typeof(object), "OBJECT"}
+        };
+
+        public static Dictionary<string, Type> EntityTypes = new Dictionary<string, Type>()
+        {
+            {"LINE",typeof(Line)},
+            {"CURVE",typeof(Curve)},
+            {"CIRCLE",typeof(Circle)},
+            {"HATCH",typeof(Hatch)},
         };
 
         public static bool CheckForClientExit(SocketMessage Message)
@@ -226,7 +234,7 @@ namespace SocketWrapper
                     message = this.SetEvent(reply);
                     break;
                 case Protocol.ServerAction.REQUEST_USER_INPUT:
-                    message = this.GetUserInput(reply);
+                    message = this.GetString(reply);
                     break;
                 case Protocol.ServerAction.WRITE:
                     message = this.Write(reply);
@@ -254,18 +262,10 @@ namespace SocketWrapper
             return message;
         }
 
-        private SocketMessage GetUserInput(SocketMessage reply)
+        private SocketMessage GetString(SocketMessage reply)
         {
-            //Figure out what to do
-
 
             PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
-            object value;
-            if (reply.Parameters.TryGetValue("AllowSpaces", out value))
-                pso.AllowSpaces = (bool) value;
-            else
-                pso.AllowSpaces = true;
-
             PromptResult pr = ed.GetString(pso);
 
             if (pr.Status != PromptStatus.OK)
@@ -278,37 +278,35 @@ namespace SocketWrapper
 
         private SocketMessage GetEntity(SocketMessage reply)
         {
-            List<string> Prompts = new List<string>();
-            if (reply.Payload is string)
-            {
-                Prompts.Add((string) reply.Payload);
-            }
-            else
-            {
-                Prompts = (List<string>) reply.Payload;
-            }
-            PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
-            //bool value = true;
-            object value;
-            if (reply.Parameters.TryGetValue("AllowSpaces", out value))
-                pso.AllowSpaces = (bool)value;
-            else
-                pso.AllowSpaces = true;
 
-            PromptResult pr = ed.GetString(pso);
+            List<Dictionary<string,object>> Prompts = Utilities.ParametersToList(reply.Parameters);
 
-            if (pr.Status != PromptStatus.OK)
-                return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+            foreach (Dictionary<string,object> Prompt in Prompts)
+            {
+                PromptEntityOptions peo = new PromptEntityOptions((string) Prompt[Utilities.AutoCADKeywords.Prompt]);
+                object value;
+                if (Prompt.TryGetValue(Utilities.AutoCADKeywords.RejectString, out value))
+                    peo.SetRejectMessage((string) value);
+                if (Prompt.TryGetValue(Utilities.AutoCADKeywords.AllowedClass, out value))
+                    foreach (string Type in (List<string>) value)
+                        peo.AddAllowedClass(Protocol.EntityTypes[Type], false);
+                PromptEntityResult per = ed.GetEntity(peo);
+                if (per.Status != PromptStatus.OK)
+                    return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+
+                ObjectId regId = per.ObjectId;
+                //Add object mining and message forming
+            }
 
             SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
-            message.AddPayload(pr.StringResult);
+            message.AddPayload("neh");
             return message;
         }
 
         private SocketMessage Transaction(SocketMessage reply)
         {
 
-            PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
+            /*PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
             //bool value = true;
             object value;
             if (reply.Parameters.TryGetValue("AllowSpaces", out value))
@@ -319,10 +317,10 @@ namespace SocketWrapper
             PromptResult pr = ed.GetString(pso);
 
             if (pr.Status != PromptStatus.OK)
-                return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);*/
 
             SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
-            message.AddPayload(pr.StringResult);
+            message.AddPayload("No result");
             return message;
         }
 
