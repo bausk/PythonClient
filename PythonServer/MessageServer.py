@@ -233,6 +233,7 @@ class Handler(object):
             mMessage = self.NewErrorMessage(ex, MethodIdentifier, self.ErrorMessages)
         stringReply = simplejson.dumps(mMessage.__dict__)
         alive_socket.send(stringReply)
+        #Test string: '{"Status": "_ONHOLD", "ContentType": "NONE", "Parameters": [{"Prompt": "Choose first entity"}, {}], "Callback": "E7C2B6230C8647059ACEC108F957D3F5", "Action": "GET_ENTITY", "Payload": null}'
 
     def HandleSendLoop(self, alive_socket):
         pass

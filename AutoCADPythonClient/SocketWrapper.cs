@@ -54,8 +54,8 @@ namespace SocketWrapper
 
         public bool AddPayload(object Payload)
         {
-            Type T = Payload.GetType();
-            this.ContentType = Protocol.Types[T];
+            //Type T = Payload.GetType();
+            this.ContentType = "LIST";
             this.Payload = Payload;
             return true;
         }
@@ -175,6 +175,7 @@ namespace SocketWrapper
             client.SendTimeout = new TimeSpan(0, 0, this.SendTimeout);
             client.ReceiveTimeout = new TimeSpan(0, 0, this.ReceiveTimeout);
             string SerializedMessage = JsonConvert.SerializeObject(message);
+            //substitute for testing GetEntity
             client.Send(SerializedMessage, Encoding.Unicode);
             if (Protocol.CheckForClientExit(message))
             {
@@ -185,6 +186,9 @@ namespace SocketWrapper
             else
             {
                 //Client waits for reply
+                
+                //string SerializedReply = "{\"Status\": \"_ONHOLD\", \"ContentType\": \"NONE\", \"Parameters\": {\"Prompt\": \"Choose first entity\"}, \"Callback\": \"E7C2B6230C8647059ACEC108F957D3F5\", \"Action\": \"GET_ENTITY\", \"Payload\": null}";
+                //string SerializedReply = "{\"Status\": \"_ONHOLD\", \"ContentType\": \"NONE\", \"Parameters\": [{\"Prompt\": \"Choose first entity\"}, {\"Prompt\": \"Choose second entity\"}], \"Callback\": \"E7C2B6230C8647059ACEC108F957D3F5\", \"Action\": \"GET_ENTITY\", \"Payload\": null}";
                 string SerializedReply = client.Receive(Encoding.UTF8);//.Remove(0,1);
                 response = JsonConvert.DeserializeObject<SocketMessage>(SerializedReply);
             }
@@ -200,6 +204,8 @@ namespace SocketWrapper
             {
                 do
                 {
+                    //Substitute message
+                    
                     Reply = this.SendMessage(client, Message);
                     exitflag = Protocol.CheckForTermination(Reply); //client stops without doing any work
                     if (!exitflag)
@@ -280,26 +286,38 @@ namespace SocketWrapper
         {
 
             List<Dictionary<string,object>> Prompts = Utilities.ParametersToList(reply.Parameters);
-
+            List<PromptEntityResult> Result = new List<PromptEntityResult>();
             foreach (Dictionary<string,object> Prompt in Prompts)
             {
-                PromptEntityOptions peo = new PromptEntityOptions((string) Prompt[Utilities.AutoCADKeywords.Prompt]);
+                PromptEntityOptions peo;
+                try
+                {
+                    peo = new PromptEntityOptions((string)Prompt[Utilities.AutoCADKeywords.Prompt]);
+                }
+                catch
+                {
+                    return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                }
+
                 object value;
                 if (Prompt.TryGetValue(Utilities.AutoCADKeywords.RejectString, out value))
                     peo.SetRejectMessage((string) value);
+
                 if (Prompt.TryGetValue(Utilities.AutoCADKeywords.AllowedClass, out value))
                     foreach (string Type in (List<string>) value)
                         peo.AddAllowedClass(Protocol.EntityTypes[Type], false);
+
                 PromptEntityResult per = ed.GetEntity(peo);
+
                 if (per.Status != PromptStatus.OK)
                     return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
-
-                ObjectId regId = per.ObjectId;
+                Result.Add(per);
+                //ObjectId regId = per.ObjectId;
                 //Add object mining and message forming
             }
 
             SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
-            message.AddPayload("neh");
+            message.AddPayload(Result);
             return message;
         }
 

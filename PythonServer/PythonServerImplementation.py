@@ -52,7 +52,7 @@ class ServerSE(Procedure):
     @state(0)
     def state0(self, reply):
         prompt1 = AutoCAD.GetPromptEntityOptions(Prompt = "Choose first entity")
-        prompt2 = AutoCAD.GetPromptEntityOptions()
+        prompt2 = AutoCAD.GetPromptEntityOptions(Prompt = "Choose second entity")
         PromptEntityOptions = [prompt1, prompt2]
         message = MessageFactory.GetEntity(PromptEntityOptions)
         return message

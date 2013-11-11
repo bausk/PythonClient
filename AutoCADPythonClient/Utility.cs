@@ -32,15 +32,19 @@ namespace SocketWrapper
         public static List<Dictionary<string,object>> ParametersToList(object Params)
         {
             List<Dictionary<string, object>> Prompts = new List<Dictionary<string, object>>();
-            if (Params is List<Dictionary>)
+            if (Params is Newtonsoft.Json.Linq.JArray)
             {
-                Prompts = (List<Dictionary<string, object>>)Params;
+                Newtonsoft.Json.Linq.JArray ParamsArray = (Newtonsoft.Json.Linq.JArray)Params;
+                List<Dictionary<string,object>> ParamsList = ParamsArray.ToObject<List<Dictionary<string,object>>>();
+                return ParamsList;
             }
-            else if (Params is Dictionary)
+            else if (Params is Newtonsoft.Json.Linq.JObject)
             {
-                Prompts.Add((Dictionary<string, object>)Params);
+                Newtonsoft.Json.Linq.JArray ParamsArray = new Newtonsoft.Json.Linq.JArray((Newtonsoft.Json.Linq.JObject)Params);
+                List<Dictionary<string, object>> ParamsList = ParamsArray.ToObject<List<Dictionary<string, object>>>();
+                return ParamsList;
             }
-            return Prompts;
+            return Prompts; //empty list
         }
 
         static byte[] GetBytes(string str)

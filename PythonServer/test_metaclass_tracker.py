@@ -20,4 +20,5 @@ class AutoCAD(object):
 
 
 aa = AutoCAD()
-zzz = aa.Parse([1], MessageFactory.GetUserString)
+zzz = aa.
+([1], MessageFactory.GetUserString)
