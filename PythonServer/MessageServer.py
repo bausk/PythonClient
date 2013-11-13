@@ -94,6 +94,11 @@ class Message(object):
         self.Status = Status
     def Finalize(self):
         self.Status = Protocol.Status.FINISH
+    def Parse(self):
+        if type(self.Payload) is list:
+            return (a for a in self.Payload)
+        else:
+            return self.Payload
 
 class MessageFactory(object):
     @classmethod

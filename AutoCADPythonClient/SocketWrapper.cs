@@ -12,64 +12,6 @@ using Newtonsoft.Json;
 namespace SocketWrapper
 {
 
-    public class SocketMessage
-    {
-        public const int Empty = 0;
-        public const int End = 1;
-        public const int Abort = 2;
-        public const int Error = 3;
-
-        public SocketMessage(string Action)
-        {
-            this.Callback = "";
-            this.Action = Action; 
-            this.Payload = null;
-            this.ContentType = "";
-            this.Status = Protocol.Status.OK;
-        }
-        public SocketMessage(string Action, string Status)
-        {
-            this.Callback = "";
-            this.Action = Action;
-            this.Payload = null;
-            this.ContentType = "";
-            this.Status = Status;
-        }
-        public SocketMessage(string Action, string Status, string Callback)
-        {
-            this.Callback = Callback; 
-            this.Action = Action;
-            this.Payload = null; 
-            this.ContentType = "";
-            this.Status = Status;
-        }
-        public SocketMessage()
-        {
-            this.Callback = "";
-            this.Action = "";
-            this.Payload = null;
-            this.ContentType = "";
-            this.Status = Protocol.Status.OK;
-        }
-
-        public bool AddPayload(object Payload)
-        {
-            //Type T = Payload.GetType();
-            this.ContentType = "LIST";
-            this.Payload = Payload;
-            return true;
-        }
-
-        public string Action { get; set; }
-        public string ContentType { get; set; }
-        public string Callback { get; set; }
-        public string Status { get; set; }
-        public object Parameters { get; set; }
-        //public string SerializedContent { get; set; }
-        public object Payload { get; set; }
-
-    }
-
     public static class Protocol
     {
         public struct ClientAction
@@ -151,13 +93,13 @@ namespace SocketWrapper
         }
 
         //client command factories
-        public static SocketMessage NewCommand(string Name)
+        public static ClientMessage NewCommand(string Name)
         {
-            return new SocketMessage(Protocol.ClientAction.CMD, Protocol.Status.OK, Name);
+            return new ClientMessage(Protocol.ClientAction.CMD, Protocol.Status.OK, Name);
         }
-        public static SocketMessage NewReply()
+        public static ServerMessage NewReply()
         {
-            return new SocketMessage();
+            return new ServerMessage();
         }
         
     }
@@ -168,9 +110,9 @@ namespace SocketWrapper
         public int ReceiveTimeout { get; set; }
         public int Port { get; set; }  
   
-        public SocketMessage SendMessage(ZmqSocket client, SocketMessage message)
+        public ServerMessage SendMessage(ZmqSocket client, ClientMessage message)
         {
-            SocketMessage response = new SocketMessage();
+            ServerMessage response = new ServerMessage();
             client.Connect("tcp://localhost:" + this.Port.ToString());
             client.SendTimeout = new TimeSpan(0, 0, this.SendTimeout);
             client.ReceiveTimeout = new TimeSpan(0, 0, this.ReceiveTimeout);
@@ -190,14 +132,14 @@ namespace SocketWrapper
                 //string SerializedReply = "{\"Status\": \"_ONHOLD\", \"ContentType\": \"NONE\", \"Parameters\": {\"Prompt\": \"Choose first entity\"}, \"Callback\": \"E7C2B6230C8647059ACEC108F957D3F5\", \"Action\": \"GET_ENTITY\", \"Payload\": null}";
                 //string SerializedReply = "{\"Status\": \"_ONHOLD\", \"ContentType\": \"NONE\", \"Parameters\": [{\"Prompt\": \"Choose first entity\"}, {\"Prompt\": \"Choose second entity\"}], \"Callback\": \"E7C2B6230C8647059ACEC108F957D3F5\", \"Action\": \"GET_ENTITY\", \"Payload\": null}";
                 string SerializedReply = client.Receive(Encoding.UTF8);//.Remove(0,1);
-                response = JsonConvert.DeserializeObject<SocketMessage>(SerializedReply);
+                response = JsonConvert.DeserializeObject<ServerMessage>(SerializedReply);
             }
             return response;
         }
 
-        public void CommandLoop(SocketWrapper.AutoCAD Session, SocketMessage Message)
+        public void CommandLoop(SocketWrapper.AutoCAD Session, ClientMessage Message)
         {
-            SocketMessage Reply = Protocol.NewReply(); 
+            ServerMessage Reply = Protocol.NewReply(); 
             bool exitflag = false;
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
@@ -231,9 +173,9 @@ namespace SocketWrapper
             transport.Port = 5556;
         }
 
-        public SocketMessage DispatchReply(SocketMessage reply)
+        public ClientMessage DispatchReply(ServerMessage reply)
         {
-            SocketMessage message = new SocketMessage();
+            ClientMessage message = new ClientMessage();
             switch (reply.Action)
             {
                 case Protocol.ServerAction.SETEVENT:
@@ -256,33 +198,33 @@ namespace SocketWrapper
                 case Protocol.ServerAction.TRANSACTION_MANIPULATE_DB:
                     break;
                 case Protocol.ServerAction.TRANSACTION_COMMIT:
-                    message = new SocketMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
+                    message = new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
                     break;
                 case Protocol.ServerAction.TRANSACTION_ABORT:
                     break;
                 default:
-                    message = new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                    message = new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
                     break;
             }
             message.Callback = reply.Callback; //highly doubtful we should do it here
             return message;
         }
 
-        private SocketMessage GetString(SocketMessage reply)
+        private ClientMessage GetString(ServerMessage reply)
         {
 
             PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
             PromptResult pr = ed.GetString(pso);
 
             if (pr.Status != PromptStatus.OK)
-                return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                return new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
 
-            SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
+            ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
             message.AddPayload(pr.StringResult);
             return message;
         }
 
-        private SocketMessage GetEntity(SocketMessage reply)
+        private ClientMessage GetEntity(ServerMessage reply)
         {
 
             List<Dictionary<string,object>> Prompts = Utilities.ParametersToList(reply.Parameters);
@@ -296,7 +238,7 @@ namespace SocketWrapper
                 }
                 catch
                 {
-                    return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                    return new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
                 }
 
                 object value;
@@ -310,18 +252,18 @@ namespace SocketWrapper
                 PromptEntityResult per = ed.GetEntity(peo);
 
                 if (per.Status != PromptStatus.OK)
-                    return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                    return new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
                 Result.Add(per);
                 //ObjectId regId = per.ObjectId;
                 //Add object mining and message forming
             }
 
-            SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
+            ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
             message.AddPayload(Result);
             return message;
         }
 
-        private SocketMessage Transaction(SocketMessage reply)
+        private ClientMessage Transaction(ServerMessage reply)
         {
 
             /*PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
@@ -337,21 +279,20 @@ namespace SocketWrapper
             if (pr.Status != PromptStatus.OK)
                 return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);*/
 
-            SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
+            ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
             message.AddPayload("No result");
             return message;
         }
 
-
-        private SocketMessage Write(SocketMessage reply)
+        private ClientMessage Write(ServerMessage reply)
         {
 
             ed.WriteMessage((string) reply.Payload);
-            SocketMessage message = new SocketMessage(Protocol.ClientAction.CONTINUE);
+            ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
             return message;
         }
 
-        private SocketMessage SetEvent(SocketMessage reply)
+        private ClientMessage SetEvent(ServerMessage reply)
         {
             this.db.ObjectAppended += new ObjectEventHandler(OnObjectCreated);
             SocketMessage message = new SocketMessage();
@@ -364,13 +305,11 @@ namespace SocketWrapper
                     break;
                 default:
                     message.Action = "END";
-                    return new SocketMessage();
+                    return new ClientMessage();
             }
             message.Action = "OK";
-            return new SocketMessage();
+            return new ClientMessage();
         }
-
-
 
         public void OnObjectCreated(object sender, ObjectEventArgs e)
         {
@@ -395,28 +334,9 @@ namespace SocketWrapper
 
         }
 
-        //public SocketMessage Message { get; set; }
-        //public SocketMessage Reply { get; set; }
-        //public string SerializedReply { get; set; }
-        //public string SerializedMessage { get; set; }
         private Document doc { get; set; }
         private Database db { get; set; }
         private Editor ed { get; set; }
-
-
-        static byte[] GetBytes(string str)
-        {
-            byte[] bytes = new byte[str.Length * sizeof(char)];
-            System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
-            return bytes;
-        }
-
-        static string GetString(byte[] bytes)
-        {
-            char[] chars = new char[bytes.Length / sizeof(char)];
-            System.Buffer.BlockCopy(bytes, 0, chars, 0, bytes.Length);
-            return new string(chars);
-        }
 
     }
 

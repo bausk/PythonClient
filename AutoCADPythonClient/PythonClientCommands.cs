@@ -17,7 +17,7 @@ namespace ShadowbinderClient
         {
             SocketWrapper.Transport Transport = new SocketWrapper.Transport(); 
             SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD(Transport);
-            SocketMessage Message = Protocol.NewCommand("Handshake");
+            ClientMessage Message = Protocol.NewCommand("Handshake");
             Transport.CommandLoop(Session, Message);
         }
 
@@ -26,7 +26,7 @@ namespace ShadowbinderClient
         {
             SocketWrapper.Transport Transport = new SocketWrapper.Transport();
             SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD(Transport);
-            SocketMessage Message = Protocol.NewCommand("Inform");
+            ClientMessage Message = Protocol.NewCommand("Inform");
             Transport.CommandLoop(Session, Message);
         }
 
@@ -35,7 +35,7 @@ namespace ShadowbinderClient
         {
             SocketWrapper.Transport Transport = new SocketWrapper.Transport();
             SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD(Transport);
-            SocketWrapper.SocketMessage Message = Protocol.NewCommand("ServerSE");
+            ClientMessage Message = Protocol.NewCommand("ServerSE");
             Transport.CommandLoop(Session, Message);
         }
 
