@@ -46,7 +46,8 @@ namespace SocketWrapper
             public const string FINISH = "_FINISH";
             public const string OK = "_OK";
             public const string ONHOLD = "_ONHOLD";
-        }        
+            public const string SERVER_ERROR = "_SERVERERROR";
+        }
         
         //Payload parameter demands, should rename
         public const int PAYLOAD_STRING = 1;
@@ -77,7 +78,7 @@ namespace SocketWrapper
             else
                 return false;
         }
-        public static bool CheckForServerExit(SocketMessage Reply)
+        public static bool CheckForServerCleanExit(SocketMessage Reply)
         {
             if (Reply.Status == Protocol.Status.FINISH)
                 return true;
@@ -97,10 +98,19 @@ namespace SocketWrapper
         {
             return new ClientMessage(Protocol.ClientAction.CMD, Protocol.Status.OK, Name);
         }
+
         public static ServerMessage NewReply()
         {
             return new ServerMessage();
         }
+
+        public static ServerMessage NewServerError(string Prompt)
+        {
+            ServerMessage M = new ServerMessage(Protocol.ServerAction.TERMINATE, Protocol.Status.SERVER_ERROR);
+            M.Payload = Prompt;
+            return M;
+        }
+
         
     }
 
@@ -132,7 +142,14 @@ namespace SocketWrapper
                 //string SerializedReply = "{\"Status\": \"_ONHOLD\", \"ContentType\": \"NONE\", \"Parameters\": {\"Prompt\": \"Choose first entity\"}, \"Callback\": \"E7C2B6230C8647059ACEC108F957D3F5\", \"Action\": \"GET_ENTITY\", \"Payload\": null}";
                 //string SerializedReply = "{\"Status\": \"_ONHOLD\", \"ContentType\": \"NONE\", \"Parameters\": [{\"Prompt\": \"Choose first entity\"}, {\"Prompt\": \"Choose second entity\"}], \"Callback\": \"E7C2B6230C8647059ACEC108F957D3F5\", \"Action\": \"GET_ENTITY\", \"Payload\": null}";
                 string SerializedReply = client.Receive(Encoding.UTF8);//.Remove(0,1);
-                response = JsonConvert.DeserializeObject<ServerMessage>(SerializedReply);
+                try
+                {
+                    response = JsonConvert.DeserializeObject<ServerMessage>(SerializedReply);
+                }
+                catch (ArgumentNullException ex)
+                {
+                    response = Protocol.NewServerError("Server not reached, exiting");
+                }
             }
             return response;
         }
@@ -150,13 +167,12 @@ namespace SocketWrapper
                     
                     Reply = this.SendMessage(client, Message);
                     exitflag = Protocol.CheckForTermination(Reply); //client stops without doing any work
+                    Message = Session.DispatchReply(Reply);
                     if (!exitflag)
                     {
-                        Message = Session.DispatchReply(Reply);
-                        exitflag = Protocol.CheckForServerExit(Reply); //server sends FINISH status, client does work and stops without initiating new message pair
+                        exitflag = Protocol.CheckForServerCleanExit(Reply); //server sends FINISH status, client does work and stops without initiating new message pair
                     }
                 } while (!exitflag);
-
             }
         }
     }
@@ -178,6 +194,13 @@ namespace SocketWrapper
             ClientMessage message = new ClientMessage();
             switch (reply.Action)
             {
+                case Protocol.ServerAction.TERMINATE:
+                    if (reply.Status == Protocol.Status.SERVER_ERROR)
+                        {
+                            this.Write(reply);
+                        }
+                    message = new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                    break;
                 case Protocol.ServerAction.SETEVENT:
                     message = this.SetEvent(reply);
                     break;

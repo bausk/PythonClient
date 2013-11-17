@@ -53,6 +53,16 @@ namespace SocketWrapper
 
     public class ServerMessage : SocketMessage
     {
+        public ServerMessage()
+            : base()
+        {
+            Payload = new List<Dictionary<string, object>>();
+        }
+        public ServerMessage(string Action, string Status)
+            : base(Action, Status)
+        {
+            Payload = new List<Dictionary<string, object>>();
+        }
         public object Payload
         {
             get;
@@ -95,6 +105,8 @@ namespace SocketWrapper
 
             set
             {
+                //this is the most interesting part
+
                 var a = new Dictionary<string, object>();
                 a["object"] = value;
                 _Payload.Add(a);

@@ -11,6 +11,7 @@ import time
 import zmq
 from zmq.eventloop import ioloop
 from MessageServer import Message, MessageFactory, Handler, Procedure, Protocol, state, AutoCAD
+import AutoCAD
 #from test_decorator_tracker import *
 
 ALIVE_URL = 'tcp://127.0.0.1:5556'
@@ -51,10 +52,10 @@ class ServerSE(Procedure):
 
     @state(0)
     def state0(self, reply):
-        prompt1 = AutoCAD.GetPromptEntityOptions(Prompt = "Choose first entity")
-        prompt2 = AutoCAD.GetPromptEntityOptions(Prompt = "Choose second entity")
-        PromptEntityOptions = [prompt1, prompt2]
-        message = MessageFactory.GetEntity(PromptEntityOptions)
+        prompt1 = AutoCAD.GetSelectionOptions(Prompt = "Choose first entity", Name = "obj1")
+        prompt2 = AutoCAD.GetSelectionOptions(Prompt = "Choose second entity")
+        Options = [prompt1, prompt2]
+        message = MessageFactory.GetEntity(Options)
         return message
 
     @state(1)

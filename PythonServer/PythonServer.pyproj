@@ -27,6 +27,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AutoCAD.py" />
     <Compile Include="Shadowbinder.py" />
     <Compile Include="MessageServer.py" />
     <Compile Include="module1.py" />

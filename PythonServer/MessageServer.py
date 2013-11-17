@@ -13,6 +13,9 @@ import zmq
 from zmq.eventloop import ioloop
 from functools import wraps
 import uuid
+import AutoCAD
+from Protocol import Protocol
+from Message import Message, MessageFactory
 
 def _json_object_hook(d): return namedtuple('Message', d.keys())(*d.values())
 
@@ -38,139 +41,6 @@ def state(statenum):
         return wrapped
     return decorator
 
-class Protocol(object):
-
-    class ClientAction:
-        CMD = "COMMAND"
-        ERROR = "CLIENT_ERROR"
-        EVENT = "EVENT"
-        CONTINUE = "CONTINUE"
-        CONSOLE = "CONSOLE"
-
-    class ServerAction:
-        SETEVENT = "SET_EVENT"
-        WRITE = "WRITE_MESSAGE"
-        REQUEST_USER_INPUT = "REQUEST_INPUT"
-        REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS"
-        MANIPULATE = "MANIPULATE_DB"
-        TERMINATE = "TERMINATE_SESSION"
-        GET_ENTITY_ID = "GET_ENTITY"
-        TRANSACTION_START = "TRANSACTION_START"
-        TRANSACTION_COMMIT = "TRANSACTION_COMMIT"
-        TRANSACTION_ABORT = "TRANSACTION_ABORT"
-
-    class Status:
-        FINISH = "_FINISH"
-        OK = "_OK"
-        ONHOLD = "_ONHOLD"
-        
-    class AutoCADKeywords:
-        Prompt = "Prompt"
-        AllowedClass = "AllowedClass"
-        RejectMessage = "RejectMessage"
-
-    #Payload types
-    PL_STRING = 1
-    PL_ENTITIES = 2
-
-    #types
-    Types = {
-                type(0):"INT",
-                type(""):"STRING",
-                type([]):"LIST",
-                type({}):"DICTIONARY",
-                object:"OBJECT",
-                type(None):"NONE"
-                }
-
-class Message(object):
-    def __init__( self, Action = None, Payload = None, Callback = None, Status = None, Parameters = None):
-        self.Action = Action
-        self.ContentType = Protocol.Types[type(Payload)]
-        self.Parameters = Parameters
-        self.Payload = Payload
-        #self.SerializedContent = simplejson.dumps(Content)
-        self.Callback = Callback
-        self.Status = Status
-    def Finalize(self):
-        self.Status = Protocol.Status.FINISH
-    def Parse(self):
-        if type(self.Payload) is list:
-            return (a for a in self.Payload)
-        else:
-            return self.Payload
-
-class MessageFactory(object):
-    @classmethod
-    def Error(cls, error, id, ErrorMessages):
-        message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id), Status = Protocol.Status.FINISH)
-        return message
-
-    @classmethod
-    def GetUserString(cls, prompt = None):
-        """Forms a message for single user input request. str Prompt is a command line message prompt.
-        """
-
-        msg = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = prompt)
-        return msg
-
-    @classmethod
-    def Write(cls, str):
-        """Forms a message writing str to client's standard output
-        """
-        msg = Message(Action = Protocol.ServerAction.WRITE, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = str)
-        return msg
-
-    @classmethod
-    def GetObjectID(cls, *prompt):
-        """Request entity ID's with arguments as prompts.
-        """
-        payload = [str for str in prompt]
-        msg = Message(Action = Protocol.ServerAction.GET_ENTITY_ID, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = payload)
-        return msg
-
-    @classmethod
-    def GetEntity(cls, prompt):
-        """Request entity ID's with arguments as prompts.
-        """
-        
-        msg = Message(Action = Protocol.ServerAction.GET_ENTITY_ID, Status = Protocol.Status.ONHOLD, Parameters = prompt, Payload = None)
-        return msg
-
-
-class AutoCAD(object):
-
-    @classmethod
-    def GetPromptEntityOptions(cls, Prompt = None, AllowedClasses = None, RejectMessage = None):
-        dictionary = {}
-        if AllowedClasses == None:
-            pass
-        else:
-            dictionary[Protocol.AutoCADKeywords.AllowedClasses] = AllowedClasses
-        if Prompt == None:
-            pass
-        else:
-            dictionary[Protocol.AutoCADKeywords.Prompt] = Prompt
-        if RejectMessage == None:
-            pass
-        else:
-            dictionary[Protocol.AutoCADKeywords.RejectMessage] = RejectMessage
-        return dictionary
-
-    @classmethod
-    def GetUserString(cls, reply):
-        result = tuple(a for a in reply.payload)
-        return result
-
-    MethodsDict = {
-                   MessageFactory.GetUserString.func_name: GetUserString
-                   }
-
-    @classmethod
-    def Parse(cls, reply, func):
-        args = cls.MethodsDict[func](reply)
-
-        return args
 
 
 class Procedure(object):
@@ -194,23 +64,12 @@ class Procedure(object):
     def GetSubclassesDict(cls):
         return {Alphanumeric(x.__name__):x for x in cls.__subclasses__()}
 
-
-    
-
-class MessageEncoder(JSONEncoder):
-    def default(self, o):
-        return {
-                "Action": o.Action,
-                "ContentType": o.ContentType,
-                "Payload": o.Payload,
-                "Callback": o.Callback
-                }
-
 class Handler(object):
     ErrorMessages = {
                      KeyError: "Command {} was not recognized by server. Command aborted.",
                      NotImplementedError: "Command {} is not implemented yet.",
                      StateSequenceError: "Command {} is missing a well-formed state.",
+                     TypeError: "TypeError occurred with the following message: {1}"
                      }
     def __init__(self):
         self.dInstantiatedProcedures = {}
@@ -235,7 +94,7 @@ class Handler(object):
             mMessage = WorkerProcedure(mReply)
             mMessage.Callback = MethodUUID #here? doubtful
         except Exception, ex:
-            mMessage = self.NewErrorMessage(ex, MethodIdentifier, self.ErrorMessages)
+            mMessage = MessageFactory.Error(ErrorMessages[type(error)], MethodIdentifier, self.ErrorMessages)
         stringReply = simplejson.dumps(mMessage.__dict__)
         alive_socket.send(stringReply)
         #Test string: '{"Status": "_ONHOLD", "ContentType": "NONE", "Parameters": [{"Prompt": "Choose first entity"}, {}], "Callback": "E7C2B6230C8647059ACEC108F957D3F5", "Action": "GET_ENTITY", "Payload": null}'
@@ -249,22 +108,7 @@ class Handler(object):
         self.dInstantiatedProcedures[uuid] = cls(*args, **kwargs)
         return uuid
 
-
     @classmethod
     def NewErrorMessage(cls, error, id, ErrorMessages):
-        message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id), Status = Protocol.Status.FINISH)
+        message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id, error.message), Status = Protocol.Status.FINISH)
         return message
-
-    @classmethod
-    def NewGetUserStringMessage(cls, Prompt = None):
-        """Forms a message for single user input request. str Prompt is a command line message prompt.
-        """
-        msg = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {"InputType": Protocol.PL_STRING}, Payload = Prompt)
-        return msg
-
-    @classmethod
-    def NewWriteMessage(cls, str):
-        """Forms a messah=ge writing str to client's standard output
-        """
-        msg = Message(Action = Protocol.ServerAction.WRITE, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = str)
-        return msg
