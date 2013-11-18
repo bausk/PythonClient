@@ -23,6 +23,10 @@ class Protocol(object):
         FINISH = "_FINISH"
         OK = "_OK"
         ONHOLD = "_ONHOLD"
+        SERVER_ERROR = "_SERVERERROR"
+
+    class Keywords:
+        DEFAULT = "DEFAULT"
 
     #Payload types
     PL_STRING = 1

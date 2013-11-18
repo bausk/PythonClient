@@ -94,7 +94,7 @@ class Handler(object):
             mMessage = WorkerProcedure(mReply)
             mMessage.Callback = MethodUUID #here? doubtful
         except Exception, ex:
-            mMessage = MessageFactory.Error(ErrorMessages[type(error)], MethodIdentifier, self.ErrorMessages)
+            mMessage = MessageFactory.Error(ex, MethodIdentifier, self.ErrorMessages)
         stringReply = simplejson.dumps(mMessage.__dict__)
         alive_socket.send(stringReply)
         #Test string: '{"Status": "_ONHOLD", "ContentType": "NONE", "Parameters": [{"Prompt": "Choose first entity"}, {}], "Callback": "E7C2B6230C8647059ACEC108F957D3F5", "Action": "GET_ENTITY", "Payload": null}'
@@ -105,10 +105,10 @@ class Handler(object):
     def InstantiateProcedure(self, classname, *args, **kwargs):
         cls = self.dRegisteredProcedures[classname]
         uuid = Alphanumeric(GenerateUuid())
-        self.dInstantiatedProcedures[uuid] = cls(*args, **kwargs)
+        self.dInstantiatedProcedures[uuid] = cls(*args, **kwargs) #what black magic is this?
         return uuid
 
     @classmethod
     def NewErrorMessage(cls, error, id, ErrorMessages):
-        message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id, error.message), Status = Protocol.Status.FINISH)
+        message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id, error.message), Status = Protocol.Status.SERVER_ERROR)
         return message

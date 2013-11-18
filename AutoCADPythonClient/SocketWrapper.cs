@@ -309,7 +309,7 @@ namespace SocketWrapper
 
         private ClientMessage Write(ServerMessage reply)
         {
-
+            //WORK HERE
             ed.WriteMessage((string) reply.Payload);
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
             return message;
