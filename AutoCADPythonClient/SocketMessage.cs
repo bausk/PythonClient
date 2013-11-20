@@ -109,7 +109,8 @@ namespace SocketWrapper
                         _Payload.Last().Add(Protocol.Keywords.DEFAULT, Item);
                     }
                     _PayloadType = Protocol.PayloadTypes.LISTOFSTRINGS;
-                }                else if (value is List<object>)
+                }
+                else if (value is List<object>)
                 {
                     foreach (object Item in (List<object>)value)
                     {
