@@ -27,18 +27,21 @@ class Protocol(object):
 
     class Keywords:
         DEFAULT = "DEFAULT"
+        OBJECT = "OBJECT"
 
-    #Payload types
-    PL_STRING = 1
-    PL_ENTITIES = 2
+    class PayloadTypes:
+        STRING = "STRING"
+        LIST = "LIST"
+        DICT = "DICT"
+        LISTOFSTRINGS = "LISTOFSTRINGS"
 
     #types
-    Types = {
-                type(0):"INT",
-                type(""):"STRING",
-                type([]):"LIST",
-                type({}):"DICTIONARY",
-                object:"OBJECT",
-                type(None):"NONE"
-                }
+    #Types = {
+    #            type(0):"INT",
+    #            type(""):"STRING",
+    #            type([]):"LIST",
+    #            type({}):"DICTIONARY",
+    #            object:"OBJECT",
+    #            type(None):"NONE"
+    #            }
 

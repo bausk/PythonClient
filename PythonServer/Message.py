@@ -3,30 +3,30 @@ from Protocol import Protocol
 class Message(object):
     def __init__( self, Action = None, Payload = None, Callback = None, Status = None, Parameters = None):
         self.Action = Action
-        self.ContentType = Protocol.Types[type(Payload)]
         self.Parameters = Parameters
-        self._Payload = None
-        #self.SerializedContent = simplejson.dumps(Content)
+        self.SetPayloadList(Payload)
         self.Callback = Callback
         self.Status = Status
+
     def Finalize(self):
         self.Status = Protocol.Status.FINISH
 
-    @property
-    def Payload(self):
-        return self._Payload
-
-    @Payload.setter
-    def Payload(self, value):
+    def SetPayloadList(self, value):
         """ Payload of a ServerMessage is always a list of dicts
         """
-        self._Payload = []
-        if isinstance(value, list):
-            self._Payload = value
+        self.Payload = []
+        if isinstance(value, list) or isinstance(value, tuple):
+            for item in value:
+                if isinstance(item, str):
+                    self.Payload.append({Protocol.Keywords.DEFAULT: item})
+                elif isinstance(item, dict):
+                    self.Payload.append(item)
+                else:
+                    self.Payload.append({Protocol.Keywords.OBJECT: item})
         elif isinstance(value, dict):
-            self._Payload.append(value)
+            self.Payload.append(value)
         else:
-            self._Payload.append({Protocol.Keywords.DEFAULT: value})
+            self.Payload.append({Protocol.Keywords.DEFAULT: value})
 
     def Parse(self):
         if type(self.Payload) is list:
@@ -53,7 +53,7 @@ class MessageFactory(object):
         return msg
 
     @classmethod
-    def Write(cls, str):
+    def Write(cls, *str):
         """Forms a message writing str to client's standard output
         """
         msg = Message(Action = Protocol.ServerAction.WRITE, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = str)

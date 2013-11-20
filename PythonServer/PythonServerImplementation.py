@@ -43,7 +43,7 @@ class Handshake(Procedure):
 class Inform(Procedure):
     @state(0)
     def state0(self, reply):
-        message = MessageFactory.Write("Hello AutoCAD")
+        message = MessageFactory.Write("Hello AutoCAD\n", "Nice!")
    
         message.Finalize()
         return message

@@ -56,17 +56,81 @@ namespace SocketWrapper
         public ServerMessage()
             : base()
         {
-            Payload = new List<Dictionary<string, object>>();
+            _Payload = new List<Dictionary<string, object>>();
+            _PayloadType = null;
         }
         public ServerMessage(string Action, string Status)
             : base(Action, Status)
         {
-            Payload = new List<Dictionary<string, object>>();
+            _Payload = new List<Dictionary<string, object>>();
+            _PayloadType = null;
         }
+
+        private List<Dictionary<string, object>> _Payload;
+        private String _PayloadType;
         public object Payload
         {
-            get;
-            set;
+            get
+            {
+                switch(_PayloadType)
+                {
+                    case Protocol.PayloadTypes.STRING:
+                        return _Payload[0][Protocol.Keywords.DEFAULT];
+                    case Protocol.PayloadTypes.LIST:
+                        return _Payload;
+                    case Protocol.PayloadTypes.LISTOFSTRINGS:
+                        List<string> retval = new List<string>();
+                        foreach (Dictionary<string, object> Item in _Payload)
+                        {
+                            retval.Add((string)Item[Protocol.Keywords.DEFAULT]);
+                        }
+                        return retval;
+                    case Protocol.PayloadTypes.DICT:
+                        return _Payload;
+                    default:
+                        return new List<Dictionary<string, object>>();
+                }
+            }
+            set
+            {
+                Type T = value.GetType();
+                _Payload = new List<Dictionary<string, object>>();
+                if (value is System.String)
+                {
+                    _Payload.Add(new Dictionary<string, object>());
+                    _Payload[0].Add(Protocol.Keywords.DEFAULT, (string) value);
+                    _PayloadType = Protocol.PayloadTypes.STRING;
+                }
+                else if (value is List<string>)
+                {
+                    foreach (string Item in (List<string>)value)
+                    {
+                        _Payload.Add(new Dictionary<string, object>());
+                        _Payload.Last().Add(Protocol.Keywords.DEFAULT, Item);
+                    }
+                    _PayloadType = Protocol.PayloadTypes.LISTOFSTRINGS;
+                }                else if (value is List<object>)
+                {
+                    foreach (object Item in (List<object>)value)
+                    {
+                        if (Item is Dictionary<string, object>)
+                        {
+                            _Payload.Add((Dictionary<string, object>)Item);
+                        }
+                        else
+                            _Payload.Add(new Dictionary<string, object>());
+                        _Payload.Last().Add(Protocol.Keywords.OBJECT, Item);
+                    }
+                    _PayloadType = Protocol.PayloadTypes.LIST;
+                }
+                else if (value is Dictionary<string,object>)
+                {
+                    _Payload.Add((Dictionary<string,object>)value);
+                    _Payload.Last().Add(Protocol.Keywords.OBJECT, value);
+                    _PayloadType = Protocol.PayloadTypes.DICT;
+                }
+                //_Payload = (List<Dictionary<string, object>>)value;
+            }
         }
 
     }
