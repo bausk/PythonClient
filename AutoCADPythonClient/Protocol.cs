@@ -101,7 +101,9 @@ namespace SocketWrapper
         public static ServerMessage NewServerError(string Prompt)
         {
             ServerMessage M = new ServerMessage(Protocol.ServerAction.TERMINATE, Protocol.Status.SERVER_ERROR);
-            M.Payload = Prompt;
+            M.Payload = new List<Dictionary<string,object>>();
+            M.Payload.Add(new Dictionary<string, object>());
+            M.Payload[0].Add(Protocol.Keywords.DEFAULT, (string)Prompt);
             return M;
         }
     }

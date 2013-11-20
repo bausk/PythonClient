@@ -208,7 +208,7 @@ namespace SocketWrapper
         private ClientMessage Write(ServerMessage reply)
         {
             //WORK HERE
-            ed.WriteMessage((string) reply.Payload);
+            ed.WriteMessage(String.Join(String.Empty, reply.GetPayloadAsStringList()));
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
             return message;
         }

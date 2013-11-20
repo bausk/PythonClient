@@ -53,21 +53,34 @@ namespace SocketWrapper
 
     public class ServerMessage : SocketMessage
     {
+        //WORK HERE
         public ServerMessage()
             : base()
         {
-            _Payload = new List<Dictionary<string, object>>();
-            _PayloadType = null;
+            Payload = new List<Dictionary<string, object>>();
+            //_PayloadType = null;
         }
         public ServerMessage(string Action, string Status)
             : base(Action, Status)
         {
-            _Payload = new List<Dictionary<string, object>>();
-            _PayloadType = null;
+            Payload = new List<Dictionary<string, object>>();
+            //_PayloadType = null;
         }
 
-        private List<Dictionary<string, object>> _Payload;
-        private String _PayloadType;
+        public List<Dictionary<string, object>> Payload //ALWAYS expect a list of dicts
+            { get; set; }
+        //private String _PayloadType;
+
+        public List<string> GetPayloadAsStringList()
+        {
+            List<string> retval = new List<string>();
+            foreach (Dictionary<string, object> Item in Payload)
+            {
+                retval.Add((string)Item[Protocol.Keywords.DEFAULT]);
+            }
+            return retval;
+        }
+        /*
         public object Payload
         {
             get
@@ -133,12 +146,13 @@ namespace SocketWrapper
                 //_Payload = (List<Dictionary<string, object>>)value;
             }
         }
-
+        */
     }
 
 
     public class ClientMessage : SocketMessage
     {
+        //Not sure how it will be serialized
         public ClientMessage(string Action, string Status, string Callback)
             : base(Action, Status, Callback)
         {
