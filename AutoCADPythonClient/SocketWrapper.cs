@@ -133,15 +133,24 @@ namespace SocketWrapper
 
         private ClientMessage GetString(ServerMessage reply)
         {
-
-            PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
-            PromptResult pr = ed.GetString(pso);
-
-            if (pr.Status != PromptStatus.OK)
-                return new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
-
+            List<string> prompts = reply.GetPayloadAsStringList();
+            List<string> replies = new List<string>();
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
-            message.AddPayload(pr.StringResult);
+            foreach (string prompt in prompts)
+            {
+                PromptStringOptions pso = new PromptStringOptions("\n" + prompt);
+                PromptResult pr = ed.GetString(pso);
+                if (pr.Status != PromptStatus.OK)
+                {
+                }
+                else
+                {
+                    replies.Add(pr.StringResult);
+                }
+                    //return new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+            }
+
+            //message.AddPayload(pr.StringResult);
             return message;
         }
 
