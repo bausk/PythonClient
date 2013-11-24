@@ -88,51 +88,6 @@ namespace Draftsocket
             return this.Payload[num][Protocol.Keywords.OBJECT];
         }
 
-        /*
-        public object Payload
-            set //- this is to become AddPayload
-            {
-                Type T = value.GetType();
-                _Payload = new List<Dictionary<string, object>>();
-                if (value is System.String)
-                {
-                    _Payload.Add(new Dictionary<string, object>());
-                    _Payload[0].Add(Protocol.Keywords.DEFAULT, (string) value);
-                    _PayloadType = Protocol.PayloadTypes.STRING;
-                }
-                else if (value is List<string>)
-                {
-                    foreach (string Item in (List<string>)value)
-                    {
-                        _Payload.Add(new Dictionary<string, object>());
-                        _Payload.Last().Add(Protocol.Keywords.DEFAULT, Item);
-                    }
-                    _PayloadType = Protocol.PayloadTypes.LISTOFSTRINGS;
-                }
-                else if (value is List<object>)
-                {
-                    foreach (object Item in (List<object>)value)
-                    {
-                        if (Item is Dictionary<string, object>)
-                        {
-                            _Payload.Add((Dictionary<string, object>)Item);
-                        }
-                        else
-                            _Payload.Add(new Dictionary<string, object>());
-                        _Payload.Last().Add(Protocol.Keywords.OBJECT, Item);
-                    }
-                    _PayloadType = Protocol.PayloadTypes.LIST;
-                }
-                else if (value is Dictionary<string,object>)
-                {
-                    _Payload.Add((Dictionary<string,object>)value);
-                    _Payload.Last().Add(Protocol.Keywords.OBJECT, value);
-                    _PayloadType = Protocol.PayloadTypes.DICT;
-                }
-                //_Payload = (List<Dictionary<string, object>>)value;
-            }
-        }
-        */
     }
 
 
@@ -164,71 +119,37 @@ namespace Draftsocket
         public List<Dictionary<string, object>> Payload
         {
             get; set;
-/*            {
-                return (object)_Payload;
-            }
-
-            set
-            {
-                //this is the most interesting part
-
-                var a = new Dictionary<string, object>();
-                a["object"] = value;
-                _Payload.Add(a);
-            }
- */
         }
 
-        public bool SetPayload(object Input)
+        public bool AddPayloadItem(object Input)
         {
-            //Type T = Input.GetType();
-            this.Payload = new List<Dictionary<string, object>>();
-            if (Input is System.String)
-            {
+            if (Input is Dictionary<string, object>)
+                this.Payload.Add((Dictionary<string, object>)Input);
+            else
                 this.Payload.Add(new Dictionary<string, object>());
-                Payload[0].Add(Protocol.Keywords.DEFAULT, (string)Input);
-                //_PayloadType = Protocol.PayloadTypes.STRING;
-            }
-            else if (Input is List<string>)
+
+            Payload.Last().Add(Protocol.Keywords.DEFAULT, Input);
+            //Here be different object fields implementation
+            //WORK HERE
+            return true;
+        }
+
+        public void SetPayload(object Input)
+        {
+            this.Payload = new List<Dictionary<string, object>>();
+            if (Input is List<object>)
             {
-                foreach (string Item in (List<string>)Input)
+                foreach (object Item in (List<string>)Input)
                 {
-                    this.Payload.Add(new Dictionary<string, object>());
-                    this.Payload.Last().Add(Protocol.Keywords.DEFAULT, Item);
+                    AddPayloadItem(Item);
                 }
-                //_PayloadType = Protocol.PayloadTypes.LISTOFSTRINGS;
-            }
-            else if (Input is List<object>)
-            {
-                foreach (object Item in (List<object>)Input)
-                {
-                    if (Item is Dictionary<string, object>)
-                    {
-                        this.Payload.Add((Dictionary<string, object>)Item);
-                    }
-                    else
-                        this.Payload.Add(new Dictionary<string, object>());
-                    this.Payload.Last().Add(Protocol.Keywords.OBJECT, Item);
-                }
-                //_PayloadType = Protocol.PayloadTypes.LIST;
             }
             else if (Input is Dictionary<string, object>)
             {
-                this.Payload.Add((Dictionary<string, object>)Input);
-                this.Payload.Last().Add(Protocol.Keywords.OBJECT, Input);
-                //_PayloadType = Protocol.PayloadTypes.DICT;
+                AddPayloadItem(Input);
             }
             else
-                return false;
-            return true;
-        }
-
-        public bool AddPayload(object Payload)
-        {
-            //Type T = Payload.GetType();
-            //this.ContentType = "LIST";
-            this.Payload = (List<Dictionary<string, object>>) Payload;
-            return true;
+                this.AddPayloadItem(Input);
         }
     }
 }

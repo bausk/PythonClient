@@ -124,7 +124,7 @@ namespace Draftsocket
             }
 
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
-            message.AddPayload(Result);
+            message.SetPayload(Result);
             return message;
         }
 
@@ -145,13 +145,12 @@ namespace Draftsocket
                 return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);*/
 
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
-            message.AddPayload("No result");
+            message.SetPayload("No result");
             return message;
         }
 
         private ClientMessage Write(ServerMessage reply)
         {
-            //WORK HERE
             ed.WriteMessage(String.Join(String.Empty, reply.GetPayloadAsStringList()));
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
             return message;
