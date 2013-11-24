@@ -11,35 +11,33 @@ namespace Draftsocket
         {
             this.Callback = "";
             this.Action = Action;
-            //this.Payload = null;
-            //this.ContentType = "";
             this.Status = Protocol.Status.OK;
+            Payload = new List<Dictionary<string, object>>();
         }
         public SocketMessage(string Action, string Status)
         {
             this.Callback = "";
             this.Action = Action;
-            //this.Payload = null;
-            //this.ContentType = "";
             this.Status = Status;
+            Payload = new List<Dictionary<string, object>>();
         }
         public SocketMessage(string Action, string Status, string Callback)
         {
             this.Callback = Callback;
             this.Action = Action;
-            //this.Payload = null; 
-            //this.ContentType = "";
             this.Status = Status;
+            Payload = new List<Dictionary<string, object>>();
         }
         public SocketMessage()
         {
             this.Callback = "";
             this.Action = "";
-            //this.Payload = null;
-            //this.ContentType = "";
             this.Status = Protocol.Status.OK;
+            Payload = new List<Dictionary<string, object>>();
         }
 
+        public List<Dictionary<string, object>> Payload //ALWAYS expect a list of dicts
+        { get; set; }
             public string Action { get; set; }
             //public string ContentType { get; set; }
             public string Callback { get; set; }
@@ -48,7 +46,36 @@ namespace Draftsocket
 
 
             //public List<Dictionary<string,object>> Payload { get; set; }
+            public bool AddPayloadItem(object Input)
+            {
+                Type T = Input.GetType();
+                if (T.IsGenericType && T.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+                    this.Payload.Add((Dictionary<string, object>)Input);
+                else
+                    this.Payload.Add(new Dictionary<string, object>());
 
+                Payload.Last().Add(Protocol.Keywords.DEFAULT, Input);
+                //Here be different object fields implementation
+                //WORK HERE
+                return true;
+            }
+
+            public void SetPayload(object Input)
+            {
+                this.Payload = new List<Dictionary<string, object>>();
+                Type T = Input.GetType();
+                if (T.IsGenericType && T.GetGenericTypeDefinition() == typeof(List<>))
+                {
+                    foreach (object Item in (List<string>)Input)
+                    {
+                        AddPayloadItem(Item);
+                    }
+                }
+                else
+                {
+                    AddPayloadItem(Input);
+                }
+            }
     }
 
     public class ServerMessage : SocketMessage
@@ -56,17 +83,10 @@ namespace Draftsocket
         //WORK HERE
         public ServerMessage()
             : base()
-        {
-            Payload = new List<Dictionary<string, object>>();
-        }
+        {}
         public ServerMessage(string Action, string Status)
             : base(Action, Status)
-        {
-            Payload = new List<Dictionary<string, object>>();
-        }
-
-        public List<Dictionary<string, object>> Payload //ALWAYS expect a list of dicts
-            { get; set; }
+        {}
 
         public List<string> GetPayloadAsStringList()
         {
@@ -87,69 +107,23 @@ namespace Draftsocket
         {
             return this.Payload[num][Protocol.Keywords.OBJECT];
         }
-
     }
 
 
     public class ClientMessage : SocketMessage
     {
         //Not sure how it will be serialized
-        public ClientMessage(string Action, string Status, string Callback)
-            : base(Action, Status, Callback)
-        {
-            Payload = new List<Dictionary<string,object>>();
-        }
         public ClientMessage()
             : base()
-        {
-            Payload = new List<Dictionary<string, object>>();
-        }
+        {}
         public ClientMessage(string Action)
             : base(Action)
-        {
-            Payload = new List<Dictionary<string, object>>();
-        }
+        {}
         public ClientMessage(string Action, string Status)
             : base(Action, Status)
-        {
-            Payload = new List<Dictionary<string, object>>();
-        }
-
-        //private List<Dictionary<string, object>> _Payload;
-        public List<Dictionary<string, object>> Payload
-        {
-            get; set;
-        }
-
-        public bool AddPayloadItem(object Input)
-        {
-            if (Input is Dictionary<string, object>)
-                this.Payload.Add((Dictionary<string, object>)Input);
-            else
-                this.Payload.Add(new Dictionary<string, object>());
-
-            Payload.Last().Add(Protocol.Keywords.DEFAULT, Input);
-            //Here be different object fields implementation
-            //WORK HERE
-            return true;
-        }
-
-        public void SetPayload(object Input)
-        {
-            this.Payload = new List<Dictionary<string, object>>();
-            if (Input is List<object>)
-            {
-                foreach (object Item in (List<string>)Input)
-                {
-                    AddPayloadItem(Item);
-                }
-            }
-            else if (Input is Dictionary<string, object>)
-            {
-                AddPayloadItem(Input);
-            }
-            else
-                this.AddPayloadItem(Input);
-        }
+        {}
+        public ClientMessage(string Action, string Status, string Callback)
+            : base(Action, Status, Callback)
+        { }
     }
 }

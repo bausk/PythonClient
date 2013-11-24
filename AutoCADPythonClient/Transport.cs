@@ -59,7 +59,7 @@ namespace Draftsocket
                     //Substitute message
                     
                     Reply = this.SendMessage(client, Message);
-                    exitflag = Protocol.CheckForTermination(Reply); //client stops without doing any work
+                    exitflag = Protocol.CheckForTermination(Reply); //client stops.
                     Message = Session.DispatchReply(Reply);
                     if (!exitflag)
                     {

@@ -69,7 +69,8 @@ class Handler(object):
                      KeyError: "Command {} was not recognized by server. Command aborted.",
                      NotImplementedError: "Command {} is not implemented yet.",
                      StateSequenceError: "Command {} is missing a well-formed state.",
-                     TypeError: "TypeError occurred with the following message: {1}"
+                     TypeError: "TypeError occurred with the following message: {1}",
+                     AttributeError: "AttributeError: {1}"
                      }
     def __init__(self):
         self.dInstantiatedProcedures = {}

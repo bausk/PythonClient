@@ -38,7 +38,7 @@ namespace Draftsocket
                     message = this.SetEvent(reply);
                     break;
                 case Protocol.ServerAction.REQUEST_USER_INPUT:
-                    message = this.GetString(reply);
+                    message = this.GetStrings(reply);
                     break;
                 case Protocol.ServerAction.WRITE:
                     message = this.Write(reply);
@@ -66,8 +66,9 @@ namespace Draftsocket
             return message;
         }
 
-        private ClientMessage GetString(ServerMessage reply)
+        private ClientMessage GetStrings(ServerMessage reply)
         {
+            //WORK HERE
             List<string> prompts = reply.GetPayloadAsStringList();
             List<string> replies = new List<string>();
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
@@ -84,7 +85,7 @@ namespace Draftsocket
                 }
                 //return new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
             }
-
+            message.SetPayload(replies);
             //message.AddPayload(pr.StringResult);
             return message;
         }
