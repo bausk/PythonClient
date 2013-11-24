@@ -10,7 +10,7 @@
     <ProjectGuid>{EB26A102-24F8-4EC1-942C-316F15CFEF2C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SocketWrapper</RootNamespace>
+    <RootNamespace>Draftsocket</RootNamespace>
     <AssemblyName>ShadowbinderClient</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -112,6 +112,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoCAD.cs" />
     <Compile Include="Protocol.cs" />
     <Compile Include="SocketMessage.cs" />
     <Compile Include="TestCommands.cs">
@@ -124,7 +125,7 @@
     </Compile>
     <Compile Include="Utility.cs" />
     <Compile Include="ReferenceFiler.cs" />
-    <Compile Include="SocketWrapper.cs" />
+    <Compile Include="Transport.cs" />
     <Compile Include="PythonClientCommands.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

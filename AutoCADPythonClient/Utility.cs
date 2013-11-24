@@ -8,7 +8,7 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.EditorInput;
 using Newtonsoft.Json;
 
-namespace SocketWrapper
+namespace Draftsocket
 {
 
     public static class Utilities

@@ -1,5 +1,5 @@
 ﻿using Autodesk.AutoCAD.Runtime;
-using SocketWrapper;
+using Draftsocket;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -15,8 +15,8 @@ namespace ShadowbinderClient
         [CommandMethod("Handshake")]
         public void Repent()
         {
-            SocketWrapper.Transport Transport = new SocketWrapper.Transport(); 
-            SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD(Transport);
+            Draftsocket.Transport Transport = new Draftsocket.Transport(); 
+            Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
             ClientMessage Message = Protocol.NewCommand("Handshake");
             Transport.CommandLoop(Session, Message);
         }
@@ -24,8 +24,8 @@ namespace ShadowbinderClient
         [CommandMethod("Inform")]
         public void Shadowbind()
         {
-            SocketWrapper.Transport Transport = new SocketWrapper.Transport();
-            SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD(Transport);
+            Draftsocket.Transport Transport = new Draftsocket.Transport();
+            Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
             ClientMessage Message = Protocol.NewCommand("Inform");
             Transport.CommandLoop(Session, Message);
         }
@@ -33,8 +33,8 @@ namespace ShadowbinderClient
         [CommandMethod("ServerSE")]
         public void ServerSE()
         {
-            SocketWrapper.Transport Transport = new SocketWrapper.Transport();
-            SocketWrapper.AutoCAD Session = new SocketWrapper.AutoCAD(Transport);
+            Draftsocket.Transport Transport = new Draftsocket.Transport();
+            Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
             ClientMessage Message = Protocol.NewCommand("ServerSE");
             Transport.CommandLoop(Session, Message);
         }

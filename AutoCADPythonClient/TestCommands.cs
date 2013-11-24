@@ -1,5 +1,5 @@
 ﻿using Autodesk.AutoCAD.Runtime;
-using SocketWrapper;
+using Draftsocket;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;

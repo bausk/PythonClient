@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Autodesk.AutoCAD.DatabaseServices;
 
-namespace SocketWrapper
+namespace Draftsocket
 {
     public static class Protocol
     {

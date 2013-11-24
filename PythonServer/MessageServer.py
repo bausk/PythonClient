@@ -91,7 +91,7 @@ class Handler(object):
             else:
                 MethodUUID = MethodIdentifier
             WorkerProcedure = self.dInstantiatedProcedures[MethodUUID]
-            mMessage = WorkerProcedure(mReply)
+            mMessage = WorkerProcedure(mReply) #actual call
             mMessage.Callback = MethodUUID #here? doubtful
         except Exception, ex:
             mMessage = MessageFactory.Error(ex, MethodIdentifier, self.ErrorMessages)
@@ -105,7 +105,7 @@ class Handler(object):
     def InstantiateProcedure(self, classname, *args, **kwargs):
         cls = self.dRegisteredProcedures[classname]
         uuid = Alphanumeric(GenerateUuid())
-        self.dInstantiatedProcedures[uuid] = cls(*args, **kwargs) #what black magic is this?
+        self.dInstantiatedProcedures[uuid] = cls(*args, **kwargs) #To return a correct instantiated procedure, we select class and generate uuid to refer to the instance
         return uuid
 
     @classmethod

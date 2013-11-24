@@ -34,11 +34,15 @@ class Handshake(Procedure):
 
     @state(0)
     def state0(self, reply):
-
-        message = MessageFactory.GetUserString(prompt = "Hello AutoCAD!")
-        message.Parameters["AllowSpaces"] = False
+        message = MessageFactory.GetUserStrings("Hello AutoCAD! Gimme one:", "Gimme two!")
+        message.Parameters["AllowSpaces"] = True
         message.Finalize()
         return message
+
+    @state(1)
+    def state1(self, reply):
+        print(reply)
+
 
 class Inform(Procedure):
     @state(0)
