@@ -41,8 +41,6 @@ def state(statenum):
         return wrapped
     return decorator
 
-
-
 class Procedure(object):
     def __init__ (self, Socket = None):
         self.Objects = {}
@@ -69,12 +67,14 @@ class Handler(object):
                      KeyError: "Command {} was not recognized by server. Command aborted.",
                      NotImplementedError: "Command {} is not implemented yet.",
                      StateSequenceError: "Command {} is missing a well-formed state.",
-                     TypeError: "TypeError occurred with the following message: {1}",
+                     TypeError: "TypeError: {1}",
                      AttributeError: "AttributeError: {1}"
                      }
+
     def __init__(self):
         self.dInstantiatedProcedures = {}
         self.dRegisteredProcedures = Procedure.GetSubclassesDict()
+
     def HandleReceiveLoop(self, alive_socket, *args, **kwargs):
         stringReply = alive_socket.recv().decode("utf_16")
         #stringReply = u'{"Action":"COMMAND","ContentType":"NONE","Callback":"REPENT","Content":""}'
@@ -87,17 +87,33 @@ class Handler(object):
         MethodIdentifier = Alphanumeric(mReply.Callback)
         try:
             if mReply.Action.upper() == Protocol.ClientAction.CMD:
-                    MethodUUID = self.InstantiateProcedure(MethodIdentifier, Socket = alive_socket)
-                    self.dInstantiatedProcedures[MethodUUID].Uuid = MethodUUID
+                MethodUUID = self.InstantiateProcedure(MethodIdentifier, Socket = alive_socket)
+                self.dInstantiatedProcedures[MethodUUID].Uuid = MethodUUID
             else:
                 MethodUUID = MethodIdentifier
-            WorkerProcedure = self.dInstantiatedProcedures[MethodUUID]
-            mMessage = WorkerProcedure(mReply) #actual call
-            mMessage.Callback = MethodUUID #here? doubtful
+
+            if mReply.Action.upper() == Protocol.CommonAction.TERMINATE:
+                #Incoming action is a demand to terminate all work.
+                #Kill the instance bound to incoming callback, exit
+                del self.dInstantiatedProcedures[MethodUUID]
+                return
+            else:
+                WorkerProcedure = self.dInstantiatedProcedures[MethodUUID]
+                mMessage = WorkerProcedure(mReply) #actual call
+                mMessage.Callback = MethodUUID #here? doubtful
+
         except Exception, ex:
             mMessage = MessageFactory.Error(ex, MethodIdentifier, self.ErrorMessages)
+
+        if mReply.Status.upper() == Protocol.Status.FINISH:
+            #Incoming status indicates client has stopped listening.
+            #Don't bother sending anything, kill the instance, exit
+            del self.dInstantiatedProcedures[MethodUUID]
+            return
+
         stringReply = simplejson.dumps(mMessage.__dict__)
         alive_socket.send(stringReply)
+
         #Test string: '{"Status": "_ONHOLD", "ContentType": "NONE", "Parameters": [{"Prompt": "Choose first entity"}, {}], "Callback": "E7C2B6230C8647059ACEC108F957D3F5", "Action": "GET_ENTITY", "Payload": null}'
 
     def HandleSendLoop(self, alive_socket):
@@ -111,5 +127,5 @@ class Handler(object):
 
     @classmethod
     def NewErrorMessage(cls, error, id, ErrorMessages):
-        message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id, error.message), Status = Protocol.Status.SERVER_ERROR)
+        message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id, error.message), Status = Protocol.Status.FINISH)
         return message

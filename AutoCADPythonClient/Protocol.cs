@@ -25,7 +25,6 @@ namespace Draftsocket
             public const string WRITE = "WRITE_MESSAGE";
             public const string REQUEST_USER_INPUT = "REQUEST_INPUT";
             public const string REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS";
-            public const string TERMINATE = "TERMINATE_SESSION";
             public const string GET_ENTITY_ID = "GET_ENTITY";
             public const string TRANSACTION_START = "TRANSACTION_START";
             public const string TRANSACTION_COMMIT = "TRANSACTION_COMMIT";
@@ -34,13 +33,17 @@ namespace Draftsocket
             public const string TRANSACTION_MANIPULATE_DB = "TR_MANIPULATE_DB";
         }
 
+        public struct CommonAction
+        {
+            //common action lines
+            public const string TERMINATE = "TERMINATE_SESSION";
+        }
         //status lines
         public struct Status
         {
             public const string FINISH = "_FINISH";
             public const string OK = "_OK";
             public const string ONHOLD = "_ONHOLD";
-            public const string SERVER_ERROR = "_SERVERERROR";
         }
 
         public struct PayloadTypes
@@ -65,23 +68,16 @@ namespace Draftsocket
             {"HATCH",typeof(Hatch)},
         };
 
-        public static bool CheckForClientExit(SocketMessage Message)
+        public static bool CheckForExit(SocketMessage Message)
         {
             if (Message.Status == Protocol.Status.FINISH)
                 return true;
             else
                 return false;
         }
-        public static bool CheckForServerCleanExit(SocketMessage Reply)
-        {
-            if (Reply.Status == Protocol.Status.FINISH)
-                return true;
-            else
-                return false;
-        }
         public static bool CheckForTermination(SocketMessage Reply)
         {
-            if (Reply.Action == Protocol.ServerAction.TERMINATE)
+            if (Reply.Action == Protocol.CommonAction.TERMINATE)
                 return true;
             else
                 return false;
@@ -100,11 +96,9 @@ namespace Draftsocket
 
         public static ServerMessage NewServerError(string Prompt)
         {
-            ServerMessage M = new ServerMessage(Protocol.ServerAction.TERMINATE, Protocol.Status.SERVER_ERROR);
+            //ServerMessage M = new ServerMessage(Protocol.ServerAction.TERMINATE, Protocol.Status.SERVER_ERROR);
+            ServerMessage M = new ServerMessage(Protocol.ServerAction.WRITE, Protocol.Status.FINISH);
             M.SetPayload(Prompt);
-            //M.Payload = new List<Dictionary<string,object>>();
-            //M.Payload.Add(new Dictionary<string, object>());
-            //M.Payload[0].Add(Protocol.Keywords.DEFAULT, (string)Prompt);
             return M;
         }
     }

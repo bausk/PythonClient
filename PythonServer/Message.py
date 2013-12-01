@@ -1,5 +1,9 @@
 from Protocol import Protocol
 
+class Struct(object):
+    def __init__(self, **entries): 
+        self.__dict__.update(entries)
+
 class Message(object):
     def __init__( self, Action = None, Payload = None, Callback = None, Status = None, Parameters = None):
         self.Action = Action
@@ -28,11 +32,26 @@ class Message(object):
         else:
             self.Payload.append({Protocol.Keywords.DEFAULT: value})
 
-    def Parse(self):
+    def GetDataAsRaw(self):
         if type(self.Payload) is list:
             return (a for a in self.Payload)
         else:
             return self.Payload
+
+    def GetDataAsDicts(self):
+        if type(self.Payload) is list:
+            return (a[Protocol.Keywords.DEFAULT] for a in self.Payload)
+        else:
+            return self.Payload
+
+    def GetDataAsStructs(self):
+        #WORK HERE
+        if type(self.Payload) is list:
+            return (Struct(**a[Protocol.Keywords.DEFAULT]) for a in self.Payload)
+        else:
+            return self.Payload
+
+
 
 class MessageFactory(object):
     @classmethod

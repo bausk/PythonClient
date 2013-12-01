@@ -49,7 +49,6 @@ class Inform(Procedure):
     @state(0)
     def state0(self, reply):
         message = MessageFactory.Write("Hello AutoCAD\n", "Nice!")
-   
         message.Finalize()
         return message
 
@@ -58,22 +57,20 @@ class ServerSE(Procedure):
     @state(0)
     def state0(self, reply):
         prompt1 = AutoCAD.GetSelectionOptions(Prompt = "Choose first entity", Name = "obj1")
-        prompt2 = AutoCAD.GetSelectionOptions(Prompt = "Choose second entity")
+        prompt2 = AutoCAD.GetSelectionOptions(Prompt = "Choose second entity", Name = "obj2")
         Options = [prompt1, prompt2]
         message = MessageFactory.GetEntity(Options)
         return message
 
     @state(1)
-    def state1(self, reply):
-        self.entity1, self.entity2 = reply.Parse()
-        message = MessageFactory.GetObjectID("Hello AutoCAD")
-   
+    def state1(self, reply = Message()):
+        self.entity1, self.entity2 = reply.GetDataAsDicts()
+        message = MessageFactory.Write("OK")
         return message
 
     @state(2)
     def state2(self, reply):
-        message = MessageFactory.GetObjectID("Hello AutoCAD")
-   
+        message = MessageFactory.Write("OK")
         message.Finalize()
         return message
 

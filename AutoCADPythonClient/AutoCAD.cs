@@ -12,14 +12,29 @@ namespace Draftsocket
 {
     public class AutoCAD
     {
+        private Document doc { get; set; }
+        private Database db { get; set; }
+        private Editor ed { get; set; }
+        private Dictionary<string, object> SavedObjects { get; set; }
+
+        public struct AutoCADKeywords
+        {
+            //AutoCAD keywords
+            public const string Prompt = "PROMPT";
+            public const string RejectMessage = "REJECTMESSAGE";
+            public const string AllowedClass = "ALLOWEDCLASS";
+            public const string Name = "NAME";
+        }
+
         public AutoCAD(Transport transport)
         {
-            doc = Application.DocumentManager.MdiActiveDocument;
-            db = doc.Database;
-            ed = doc.Editor;
+            this.doc = Application.DocumentManager.MdiActiveDocument;
+            this.db = doc.Database;
+            this.ed = doc.Editor;
             transport.SendTimeout = 1;
             transport.ReceiveTimeout = 1;
             transport.Port = 5556;
+            this.SavedObjects = new Dictionary<string, object>();
         }
 
         public ClientMessage DispatchReply(ServerMessage reply)
@@ -27,12 +42,12 @@ namespace Draftsocket
             ClientMessage message = new ClientMessage();
             switch (reply.Action)
             {
-                case Protocol.ServerAction.TERMINATE:
+                case Protocol.CommonAction.TERMINATE:
                     if (reply.Status == Protocol.Status.SERVER_ERROR)
                     {
                         this.Write(reply);
                     }
-                    message = new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                    message = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
                     break;
                 case Protocol.ServerAction.SETEVENT:
                     message = this.SetEvent(reply);
@@ -93,14 +108,14 @@ namespace Draftsocket
         private ClientMessage GetEntity(ServerMessage reply)
         {
 
-            List<Dictionary<string, object>> Prompts = Utilities.ParametersToList(reply.Parameters);
+            List<Dictionary<string,object>> Prompts = reply.Payload;
             List<PromptEntityResult> Result = new List<PromptEntityResult>();
-            foreach (Dictionary<string, object> Prompt in Prompts)
+            foreach (Dictionary<string, object> PromptDict in Prompts)
             {
                 PromptEntityOptions peo;
                 try
                 {
-                    peo = new PromptEntityOptions((string)Prompt[Utilities.AutoCADKeywords.Prompt]);
+                    peo = new PromptEntityOptions((string)PromptDict[AutoCADKeywords.Prompt]);
                 }
                 catch
                 {
@@ -108,20 +123,22 @@ namespace Draftsocket
                 }
 
                 object value;
-                if (Prompt.TryGetValue(Utilities.AutoCADKeywords.RejectString, out value))
+                if (PromptDict.TryGetValue(AutoCADKeywords.RejectMessage, out value))
                     peo.SetRejectMessage((string)value);
 
-                if (Prompt.TryGetValue(Utilities.AutoCADKeywords.AllowedClass, out value))
+                if (PromptDict.TryGetValue(AutoCADKeywords.AllowedClass, out value))
                     foreach (string Type in (List<string>)value)
                         peo.AddAllowedClass(Protocol.EntityTypes[Type], false);
 
                 PromptEntityResult per = ed.GetEntity(peo);
 
-                if (per.Status != PromptStatus.OK)
-                    return new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                //Add the result to payload (SetPayload called later to form the message).
                 Result.Add(per);
-                //ObjectId regId = per.ObjectId;
-                //Add object mining and message forming
+
+                //Memoization: if a name field was set in the payload item of reply message,
+                //keep the result (per) in SavedObjects
+                if (PromptDict.TryGetValue(AutoCADKeywords.Name, out value))
+                    this.SavedObjects.Add((string) value, per);
             }
 
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
@@ -199,9 +216,7 @@ namespace Draftsocket
 
         }
 
-        private Document doc { get; set; }
-        private Database db { get; set; }
-        private Editor ed { get; set; }
+
 
     }
 }

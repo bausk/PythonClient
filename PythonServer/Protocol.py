@@ -19,11 +19,14 @@ class Protocol(object):
         TRANSACTION_COMMIT = "TRANSACTION_COMMIT"
         TRANSACTION_ABORT = "TRANSACTION_ABORT"
 
+    class CommonAction:
+        TERMINATE = "TERMINATE_SESSION"
+
     class Status:
         FINISH = "_FINISH"
         OK = "_OK"
         ONHOLD = "_ONHOLD"
-        SERVER_ERROR = "_SERVERERROR"
+        #SERVER_ERROR = "_SERVERERROR" - Deprecated
 
     class Keywords:
         DEFAULT = "DEFAULT"

@@ -29,6 +29,7 @@
   <ItemGroup>
     <Compile Include="AutoCAD.py" />
     <Compile Include="Message.py" />
+    <Compile Include="module2.py" />
     <Compile Include="Protocol.py" />
     <Compile Include="Shadowbinder.py" />
     <Compile Include="MessageServer.py" />

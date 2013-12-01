@@ -39,15 +39,15 @@ namespace Draftsocket
         public List<Dictionary<string, object>> Payload //ALWAYS expect a list of dicts
         { get; set; }
             public string Action { get; set; }
-            //public string ContentType { get; set; }
             public string Callback { get; set; }
             public string Status { get; set; }
             public object Parameters { get; set; }
 
-
-            //public List<Dictionary<string,object>> Payload { get; set; }
             public bool AddPayloadItem(object Input)
             {
+                //A single entry can be a Dictionary or an arbitrary object.
+                //We put any entry under Default field.
+                //If a dictionary, then also add its fields at first level
                 Type T = Input.GetType();
                 if (T.IsGenericType && T.GetGenericTypeDefinition() == typeof(Dictionary<,>))
                     this.Payload.Add((Dictionary<string, object>)Input);
@@ -56,17 +56,19 @@ namespace Draftsocket
 
                 Payload.Last().Add(Protocol.Keywords.DEFAULT, Input);
                 //Here be different object fields implementation
-                //WORK HERE
+                //WORK HERE - external function to take care of fields specific to particular types
                 return true;
             }
 
             public void SetPayload(object Input)
             {
+                //Accepted Payload can be a List or not a List
+                //List means multiple inputs so is treated sequentially
                 this.Payload = new List<Dictionary<string, object>>();
                 Type T = Input.GetType();
                 if (T.IsGenericType && T.GetGenericTypeDefinition() == typeof(List<>))
                 {
-                    foreach (object Item in (List<string>)Input)
+                    foreach (object Item in (IEnumerable<object>)Input)
                     {
                         AddPayloadItem(Item);
                     }
@@ -94,6 +96,16 @@ namespace Draftsocket
             foreach (Dictionary<string, object> Item in this.Payload)
             {
                 retval.Add((string)Item[Protocol.Keywords.DEFAULT]);
+            }
+            return retval;
+        }
+
+        public List<object> GetPayloadListByKey(string Key)
+        {
+            List<object> retval = new List<object>();
+            foreach (Dictionary<string, object> Item in this.Payload)
+            {
+                retval.Add((object)Item[Key]);
             }
             return retval;
         }
