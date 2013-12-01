@@ -22,11 +22,20 @@ namespace ShadowbinderClient
         }
 
         [CommandMethod("Inform")]
-        public void Shadowbind()
+        public void Inform()
         {
             Draftsocket.Transport Transport = new Draftsocket.Transport();
             Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
             ClientMessage Message = Protocol.NewCommand("Inform");
+            Transport.CommandLoop(Session, Message);
+        }
+
+        [CommandMethod("InformAndReceive")]
+        public void Inform2()
+        {
+            Draftsocket.Transport Transport = new Draftsocket.Transport();
+            Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
+            ClientMessage Message = Protocol.NewCommand("Inform2");
             Transport.CommandLoop(Session, Message);
         }
 

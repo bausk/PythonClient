@@ -44,6 +44,7 @@ namespace Draftsocket
             public const string FINISH = "_FINISH";
             public const string OK = "_OK";
             public const string ONHOLD = "_ONHOLD";
+            public const string TERMINATE = "_TERMINATE";
         }
 
         public struct PayloadTypes
@@ -57,7 +58,7 @@ namespace Draftsocket
         public struct Keywords
         {
             public const string DEFAULT = "DEFAULT";
-            public const string OBJECT = "OBJECT";
+            public const string OBJECT = "OBJECT"; //Deprecated
         };
 
         public static Dictionary<string, Type> EntityTypes = new Dictionary<string, Type>()
@@ -77,7 +78,7 @@ namespace Draftsocket
         }
         public static bool CheckForTermination(SocketMessage Reply)
         {
-            if (Reply.Action == Protocol.CommonAction.TERMINATE)
+            if (Reply.Status == Protocol.Status.TERMINATE)
                 return true;
             else
                 return false;
@@ -96,8 +97,12 @@ namespace Draftsocket
 
         public static ServerMessage NewServerError(string Prompt)
         {
-            //ServerMessage M = new ServerMessage(Protocol.ServerAction.TERMINATE, Protocol.Status.SERVER_ERROR);
-            ServerMessage M = new ServerMessage(Protocol.ServerAction.WRITE, Protocol.Status.FINISH);
+            //Called when server is not reached or the input can't be understood.
+            //Dispatching this message will cause client to
+            //write a message from Prompt argument,
+            //issue a TERMINATE command to server (causing it to stop servicing the current callback without calling the next State),
+            //and exit the command loop permanently.
+            ServerMessage M = new ServerMessage(Protocol.ServerAction.WRITE, Protocol.Status.TERMINATE);
             M.SetPayload(Prompt);
             return M;
         }

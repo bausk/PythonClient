@@ -37,48 +37,52 @@ namespace Draftsocket
             this.SavedObjects = new Dictionary<string, object>();
         }
 
-        public ClientMessage DispatchReply(ServerMessage reply)
+        public ClientMessage DispatchReply(ServerMessage Reply)
         {
-            ClientMessage message = new ClientMessage();
-            switch (reply.Action)
+            ClientMessage Message = new ClientMessage();
+            switch (Reply.Action)
             {
                 case Protocol.CommonAction.TERMINATE:
-                    if (reply.Status == Protocol.Status.SERVER_ERROR)
-                    {
-                        this.Write(reply);
-                    }
-                    message = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
+                    //Don't do anything, return a TERM message to server
+                    Message = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
                     break;
                 case Protocol.ServerAction.SETEVENT:
-                    message = this.SetEvent(reply);
+                    Message = this.SetEvent(Reply);
                     break;
                 case Protocol.ServerAction.REQUEST_USER_INPUT:
-                    message = this.GetStrings(reply);
+                    Message = this.GetStrings(Reply);
                     break;
                 case Protocol.ServerAction.WRITE:
-                    message = this.Write(reply);
+                    Message = this.Write(Reply);
                     break;
                 case Protocol.ServerAction.GET_ENTITY_ID:
-                    message = this.GetEntity(reply);
+                    Message = this.GetEntity(Reply);
                     break;
                 case Protocol.ServerAction.TRANSACTION_START:
-                    message = this.Transaction(reply);
+                    Message = this.Transaction(Reply);
                     break;
                 case Protocol.ServerAction.TRANSACTION_GETOBJECT:
                     break;
                 case Protocol.ServerAction.TRANSACTION_MANIPULATE_DB:
                     break;
                 case Protocol.ServerAction.TRANSACTION_COMMIT:
-                    message = new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
+                    Message = new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
                     break;
                 case Protocol.ServerAction.TRANSACTION_ABORT:
                     break;
                 default:
-                    message = new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                    Message = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
                     break;
             }
-            message.Callback = reply.Callback; //highly doubtful we should do it here
-            return message;
+            if (Protocol.CheckForExit(Reply))
+                //The current server message is the last one.
+                //Return the result, whatever it is, and inform about Client finishing.
+                Message.SetFinishedStatus();
+            if (Protocol.CheckForTermination(Reply))
+                Message = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
+
+            Message.Callback = Reply.Callback; //highly doubtful we should do it here
+            return Message;
         }
 
         private ClientMessage GetStrings(ServerMessage reply)

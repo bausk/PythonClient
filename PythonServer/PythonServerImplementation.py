@@ -41,7 +41,7 @@ class Handshake(Procedure):
     @state(1)
     def state1(self, reply):
         message = MessageFactory.Write("OK")
-        message.Finalize()
+        message.Terminate()
         print(reply)
 
 
@@ -49,8 +49,18 @@ class Inform(Procedure):
     @state(0)
     def state0(self, reply):
         message = MessageFactory.Write("Hello AutoCAD\n", "Nice!")
+        message.Terminate()
+        return message
+
+class Inform2(Procedure):
+    @state(0)
+    def state0(self, reply):
+        message = MessageFactory.Write("Hello AutoCAD\n", "Nice!")
         message.Finalize()
         return message
+    @state(1)
+    def state1(self, reply):
+        return MessageFactory.Termination()
 
 class ServerSE(Procedure):
 

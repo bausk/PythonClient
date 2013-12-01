@@ -13,7 +13,6 @@ class Protocol(object):
         REQUEST_USER_INPUT = "REQUEST_INPUT"
         REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS"
         MANIPULATE = "MANIPULATE_DB"
-        TERMINATE = "TERMINATE_SESSION"
         GET_ENTITY_ID = "GET_ENTITY"
         TRANSACTION_START = "TRANSACTION_START"
         TRANSACTION_COMMIT = "TRANSACTION_COMMIT"
@@ -26,11 +25,11 @@ class Protocol(object):
         FINISH = "_FINISH"
         OK = "_OK"
         ONHOLD = "_ONHOLD"
-        #SERVER_ERROR = "_SERVERERROR" - Deprecated
+        TERMINATE = "_TERMINATE"
 
     class Keywords:
         DEFAULT = "DEFAULT"
-        OBJECT = "OBJECT"
+        OBJECT = "OBJECT" #Deprecated
 
     class PayloadTypes:
         STRING = "STRING"

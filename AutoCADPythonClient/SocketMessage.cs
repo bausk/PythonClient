@@ -78,6 +78,10 @@ namespace Draftsocket
                     AddPayloadItem(Input);
                 }
             }
+            public void SetFinishedStatus()
+            {
+                this.Status = Protocol.Status.FINISH;
+            }
     }
 
     public class ServerMessage : SocketMessage
@@ -117,7 +121,7 @@ namespace Draftsocket
 
         public object GetPayloadAsObject(int num = 0)
         {
-            return this.Payload[num][Protocol.Keywords.OBJECT];
+            return this.Payload[num][Protocol.Keywords.OBJECT]; //WORK HERE, OBJECT is deprecated
         }
     }
 

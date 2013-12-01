@@ -93,9 +93,11 @@ class Handler(object):
                 MethodUUID = MethodIdentifier
 
             if mReply.Action.upper() == Protocol.CommonAction.TERMINATE:
+                #Invoked after reply is received for a TERM message.
                 #Incoming action is a demand to terminate all work.
                 #Kill the instance bound to incoming callback, exit
                 del self.dInstantiatedProcedures[MethodUUID]
+                del WorkerProcedure
                 return
             else:
                 WorkerProcedure = self.dInstantiatedProcedures[MethodUUID]
@@ -106,9 +108,10 @@ class Handler(object):
             mMessage = MessageFactory.Error(ex, MethodIdentifier, self.ErrorMessages)
 
         if mReply.Status.upper() == Protocol.Status.FINISH:
-            #Incoming status indicates client has stopped listening.
+            #Invoked when clients says its reply is the last message.
             #Don't bother sending anything, kill the instance, exit
             del self.dInstantiatedProcedures[MethodUUID]
+            del WorkerProcedure
             return
 
         stringReply = simplejson.dumps(mMessage.__dict__)

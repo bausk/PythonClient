@@ -13,24 +13,16 @@ namespace Draftsocket
         public int ReceiveTimeout { get; set; }
         public int Port { get; set; }  
   
-        public ServerMessage SendMessage(ZmqSocket client, ClientMessage message)
-        {
-            this.Send(client, message);
-            ServerMessage response = new ServerMessage();
-            if (Protocol.CheckForExit(message))
-            {
-                //Client exits. Emulate server exit.
-                response.Action = Protocol.CommonAction.TERMINATE;
-            }
-            else
-            {
-                response = this.Receive(client);
-            }
-            return response;
-        }
 
         public bool Send(ZmqSocket client, ClientMessage message)
         {
+            if (client.ReceiveStatus == ZeroMQ.ReceiveStatus.TryAgain)
+            {
+                //This part has to wait until new pattern implementation
+                //Dealer/router for example
+                client.Disconnect("tcp://localhost:" + this.Port.ToString());
+                return false;
+            }
             client.Connect("tcp://localhost:" + this.Port.ToString());
             client.SendTimeout = new TimeSpan(0, 0, this.SendTimeout);
             client.ReceiveTimeout = new TimeSpan(0, 0, this.ReceiveTimeout);

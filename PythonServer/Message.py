@@ -15,6 +15,9 @@ class Message(object):
     def Finalize(self):
         self.Status = Protocol.Status.FINISH
 
+    def Terminate(self):
+        self.Status = Protocol.Status.TERMINATE
+
     def SetPayloadList(self, value):
         """ Payload of a ServerMessage is always a list of dicts
         """
@@ -60,8 +63,8 @@ class MessageFactory(object):
         return message
 
     @classmethod
-    def NewErrorMessage(cls, error, id, ErrorMessages):
-        message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id, error.message), Status = Protocol.Status.FINISH)
+    def Termination(cls):
+        message = Message(Action = Protocol.CommonAction.TERMINATE, Status = Protocol.Status.FINISH)
         return message
 
     @classmethod
