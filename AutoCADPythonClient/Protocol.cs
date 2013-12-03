@@ -58,7 +58,6 @@ namespace Draftsocket
         public struct Keywords
         {
             public const string DEFAULT = "DEFAULT";
-            public const string OBJECT = "OBJECT"; //Deprecated
         };
 
         public static Dictionary<string, Type> EntityTypes = new Dictionary<string, Type>()

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Autodesk.AutoCAD.Runtime;
+//using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
@@ -10,12 +8,12 @@ using Autodesk.AutoCAD.EditorInput;
 
 namespace Draftsocket
 {
-    public class AutoCAD
+    public class AutoCAD : ISession
     {
         private Document doc { get; set; }
         private Database db { get; set; }
         private Editor ed { get; set; }
-        private Dictionary<string, object> SavedObjects { get; set; }
+        public Dictionary<string, object> SavedObjects { get; set; }
 
         public struct AutoCADKeywords
         {
@@ -87,7 +85,6 @@ namespace Draftsocket
 
         private ClientMessage GetStrings(ServerMessage reply)
         {
-            //WORK HERE
             List<string> prompts = reply.GetPayloadAsStringList();
             List<string> replies = new List<string>();
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
@@ -97,15 +94,14 @@ namespace Draftsocket
                 PromptResult pr = ed.GetString(pso);
                 if (pr.Status != PromptStatus.OK)
                 {
+                    //WORK HERE - will need to process canceled inputs
                 }
                 else
                 {
                     replies.Add(pr.StringResult);
                 }
-                //return new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
             }
             message.SetPayload(replies);
-            //message.AddPayload(pr.StringResult);
             return message;
         }
 
@@ -146,7 +142,8 @@ namespace Draftsocket
             }
 
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
-            message.SetPayload(Result);
+            List<Dictionary<string,object>> DictResult = this.ObjectsToDicts(Result);
+            message.SetPayload(DictResult);
             return message;
         }
 
@@ -220,7 +217,25 @@ namespace Draftsocket
 
         }
 
+        public List<Dictionary<string, object>> ObjectsToDicts<T>(List<T> listobj)
+        {
+            List<Dictionary<string, object>> retval = new List<Dictionary<string, object>>();
+            foreach (object obj in listobj)
+            {
+                Dictionary<string, object> member = new Dictionary<string, object>();
+                member.Add(Protocol.Keywords.DEFAULT, obj);
 
+                Type Type = obj.GetType();
+                var obj2 = obj as PromptEntityResult;
+                if(obj2 != null)
+                {
+                    member.Add("ObjectID", obj2.ObjectId.ToString());
+                    member.Add("Handle", obj2.ObjectId.Handle.Value);
+                }
+                retval.Add(member);
+            }
+            return retval;
+        }
 
     }
 }

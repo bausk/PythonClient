@@ -45,18 +45,17 @@ namespace Draftsocket
 
             public bool AddPayloadItem(object Input)
             {
-                //A single entry can be a Dictionary or an arbitrary object.
-                //We put any entry under Default field.
-                //If a dictionary, then also add its fields at first level
+                //If the Input is a dictionary, then just add its fields at first level
+                //If the Input is not a dictionary, put in in the DEFAULT field of the new Payload member.
                 Type T = Input.GetType();
                 if (T.IsGenericType && T.GetGenericTypeDefinition() == typeof(Dictionary<,>))
                     this.Payload.Add((Dictionary<string, object>)Input);
                 else
+                {
                     this.Payload.Add(new Dictionary<string, object>());
+                    Payload.Last().Add(Protocol.Keywords.DEFAULT, Input);
+                }
 
-                Payload.Last().Add(Protocol.Keywords.DEFAULT, Input);
-                //Here be different object fields implementation
-                //WORK HERE - external function to take care of fields specific to particular types
                 return true;
             }
 
@@ -86,7 +85,6 @@ namespace Draftsocket
 
     public class ServerMessage : SocketMessage
     {
-        //WORK HERE
         public ServerMessage()
             : base()
         {}
@@ -121,7 +119,7 @@ namespace Draftsocket
 
         public object GetPayloadAsObject(int num = 0)
         {
-            return this.Payload[num][Protocol.Keywords.OBJECT]; //WORK HERE, OBJECT is deprecated
+            return this.Payload[num][Protocol.Keywords.DEFAULT];
         }
     }
 
@@ -140,6 +138,6 @@ namespace Draftsocket
         {}
         public ClientMessage(string Action, string Status, string Callback)
             : base(Action, Status, Callback)
-        { }
+        {}
     }
 }
