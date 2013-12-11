@@ -1,8 +1,5 @@
 from Protocol import Protocol
-
-class Struct(object):
-    def __init__(self, **entries): 
-        self.__dict__.update(entries)
+import simplejson
 
 class Message(object):
     def __init__( self, Action = None, Payload = None, Callback = None, Status = None, Parameters = None):
@@ -17,6 +14,9 @@ class Message(object):
 
     def Terminate(self):
         self.Status = Protocol.Status.TERMINATE
+
+    def Serialize(self):
+        return simplejson.dumps(self.__dict__)
 
     def SetPayloadList(self, value):
         """ Payload of a ServerMessage is always a list of dicts
@@ -54,8 +54,6 @@ class Message(object):
         else:
             return self.Payload
 
-
-
 class MessageFactory(object):
     @classmethod
     def Error(cls, error, id, ErrorMessages):
@@ -68,13 +66,6 @@ class MessageFactory(object):
         return message
 
     @classmethod
-    def GetUserStrings(cls, *prompts):
-        """Forms a message for single user input request. str Prompt is a command line message prompt.
-        """
-        msg = Message(Action = Protocol.ServerAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = [a for a in prompts])
-        return msg
-
-    @classmethod
     def Write(cls, *str):
         """Forms a message writing str to client's standard output
         """
@@ -82,16 +73,17 @@ class MessageFactory(object):
         return msg
 
     @classmethod
-    def GetObjectID(cls, *prompt): #DEPRECATED
-        """Wrapper for GetEntity client command.
-        Request entity ID's with arguments as prompts.
-        """
-        msg = Message(Action = Protocol.ServerAction.GET_ENTITY_ID, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = prompt)
-        return msg
+    def StartTransaction(cls):
+        return Message(Action = Protocol.ServerAction.TRANSACTION_START, Status = Protocol.Status.ONHOLD)
+      
+    @classmethod
+    def CommitTransaction(cls):
+        return Message(Action = Protocol.ServerAction.TRANSACTION_COMMIT, Status = Protocol.Status.ONHOLD)
+    
+    @classmethod
+    def AbortTransaction(cls):
+        return Message(Action = Protocol.ServerAction.TRANSACTION_ABORT, Status = Protocol.Status.ONHOLD)
 
     @classmethod
-    def GetEntity(cls, prompt):
-        """Request entity ID's with arguments as prompts.
-        """
-        msg = Message(Action = Protocol.ServerAction.GET_ENTITY_ID, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = prompt)
-        return msg
+    def Batch(cls, *messages):
+        return Message(Action = Protocol.CommonAction.BATCH, Status = Protocol.Status.OK, Payload = [msg.Serialize() for msg in messages])

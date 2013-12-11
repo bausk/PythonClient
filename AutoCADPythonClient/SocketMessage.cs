@@ -11,7 +11,7 @@ namespace Draftsocket
         {
             this.Callback = "";
             this.Action = Action;
-            this.Status = Protocol.Status.OK;
+            this.Status = GeneralProtocol.Status.OK;
             Payload = new List<Dictionary<string, object>>();
         }
         public SocketMessage(string Action, string Status)
@@ -32,7 +32,7 @@ namespace Draftsocket
         {
             this.Callback = "";
             this.Action = "";
-            this.Status = Protocol.Status.OK;
+            this.Status = GeneralProtocol.Status.OK;
             Payload = new List<Dictionary<string, object>>();
         }
 
@@ -53,7 +53,7 @@ namespace Draftsocket
                 else
                 {
                     this.Payload.Add(new Dictionary<string, object>());
-                    Payload.Last().Add(Protocol.Keywords.DEFAULT, Input);
+                    Payload.Last().Add(GeneralProtocol.Keywords.DEFAULT, Input);
                 }
 
                 return true;
@@ -79,7 +79,7 @@ namespace Draftsocket
             }
             public void SetFinishedStatus()
             {
-                this.Status = Protocol.Status.FINISH;
+                this.Status = GeneralProtocol.Status.FINISH;
             }
     }
 
@@ -97,7 +97,7 @@ namespace Draftsocket
             List<string> retval = new List<string>();
             foreach (Dictionary<string, object> Item in this.Payload)
             {
-                retval.Add((string)Item[Protocol.Keywords.DEFAULT]);
+                retval.Add((string)Item[GeneralProtocol.Keywords.DEFAULT]);
             }
             return retval;
         }
@@ -114,12 +114,12 @@ namespace Draftsocket
 
         public string GetPayloadAsString(int num = 0)
         {
-            return (string) this.Payload[num][Protocol.Keywords.DEFAULT];
+            return (string) this.Payload[num][GeneralProtocol.Keywords.DEFAULT];
         }
 
         public object GetPayloadAsObject(int num = 0)
         {
-            return this.Payload[num][Protocol.Keywords.DEFAULT];
+            return this.Payload[num][GeneralProtocol.Keywords.DEFAULT];
         }
     }
 

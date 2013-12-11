@@ -8,18 +8,15 @@ class Protocol(object):
         CONSOLE = "CONSOLE"
 
     class ServerAction:
+        WRITE = "WRITE"
         SETEVENT = "SET_EVENT"
-        WRITE = "WRITE_MESSAGE"
-        REQUEST_USER_INPUT = "REQUEST_INPUT"
-        REQUEST_SEVERAL_USER_INPUTS = "REQUEST_SEVERAL_INPUTS"
-        MANIPULATE = "MANIPULATE_DB"
-        GET_ENTITY_ID = "GET_ENTITY"
-        TRANSACTION_START = "TRANSACTION_START"
-        TRANSACTION_COMMIT = "TRANSACTION_COMMIT"
-        TRANSACTION_ABORT = "TRANSACTION_ABORT"
+        TRANSACTION_START = "TR_START"
+        TRANSACTION_COMMIT = "TR_COMMIT"
+        TRANSACTION_ABORT = "TR_ABORT"
 
     class CommonAction:
-        TERMINATE = "TERMINATE_SESSION"
+        TERMINATE = "CA_TERMINATE"
+        BATCH = "CA_BATCH"
 
     class Status:
         FINISH = "_FINISH"
@@ -36,6 +33,40 @@ class Protocol(object):
         LIST = "LIST"
         DICT = "DICT"
         LISTOFSTRINGS = "LISTOFSTRINGS"
+
+
+class AutoCADProtocol(Protocol):
+
+    class AutocadAction:
+        GET_KEYWORD = "GET_KEYWORD"
+        GET_ENTITY_ID = "GET_ENTITY"
+        GETOBJECT = "TR_GET_OBJECT"
+        MANIPULATE_DB = "TR_MANIPULATE_DB"
+        REQUEST_USER_INPUT = "REQUEST_INPUT"
+        GET_OBJECTS = "GET_OBJECTS"
+
+        class DBObject:
+            UpgradeOpen = "UPGRADEOPEN"
+            DowngradeOpen = "DOWNGRADEOPEN"
+            SwapIdWith = "SWAPIDWITH"
+
+
+    class Local:
+
+        Prompt = "PROMPT"
+        Default = "DEFAULT"
+        RejectMessage = "REJECTMESSAGE"
+        AllowedClass = "ALLOWEDCLASS"
+        Name = "NAME"
+        AllowNone = "ALLOWNONE"
+        Keywords = "KEYWORDS"
+        AllowArbitraryInput = "ALLOWARBINPUT"
+
+        ForRead = "FORREAD"
+
+        ObjectID = "KEY_OBJECTID"
+        TypeName = "KEY_TYPENAME"
+        Handle = "KEY_HANDLE"
 
     #types
     #Types = {

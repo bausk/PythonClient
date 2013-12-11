@@ -113,6 +113,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoCAD.cs" />
+    <Compile Include="AutoCADProtocol.cs" />
+    <Compile Include="AutoCADWorkers.cs" />
     <Compile Include="Session.cs" />
     <Compile Include="Protocol.cs" />
     <Compile Include="SocketMessage.cs" />

@@ -41,21 +41,21 @@ namespace Draftsocket
             }
             catch (ArgumentNullException ex)
             {
-                response = Protocol.NewServerError("Server not reached or unknown server error, exiting");
+                response = GeneralProtocol.NewServerError("Server not reached or unknown server error, exiting");
             }
             return response;
         }
 
-        public void CommandLoop(Draftsocket.AutoCAD Session, ClientMessage Message)
+        public void CommandLoop(ISession Session, ClientMessage Message)
         {
-            ServerMessage Reply = Protocol.NewReply(); 
+            ServerMessage Reply = GeneralProtocol.NewReply(); 
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
             {
                 do
                 {
                     this.Send(client, Message);
-                    if (Protocol.CheckForExit(Message))
+                    if (GeneralProtocol.CheckForExit(Message))
                         break;
                     Reply = this.Receive(client);
                     Message = Session.DispatchReply(Reply);

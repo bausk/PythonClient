@@ -8,21 +8,15 @@ using Autodesk.AutoCAD.EditorInput;
 
 namespace Draftsocket
 {
-    public class AutoCAD : ISession
+
+
+    public partial class AutoCAD : ISession
     {
         private Document doc { get; set; }
         private Database db { get; set; }
         private Editor ed { get; set; }
         public Dictionary<string, object> SavedObjects { get; set; }
 
-        public struct AutoCADKeywords
-        {
-            //AutoCAD keywords
-            public const string Prompt = "PROMPT";
-            public const string RejectMessage = "REJECTMESSAGE";
-            public const string AllowedClass = "ALLOWEDCLASS";
-            public const string Name = "NAME";
-        }
 
         public AutoCAD(Transport transport)
         {
@@ -33,6 +27,7 @@ namespace Draftsocket
             transport.ReceiveTimeout = 1;
             transport.Port = 5556;
             this.SavedObjects = new Dictionary<string, object>();
+            
         }
 
         public ClientMessage DispatchReply(ServerMessage Reply)
@@ -44,24 +39,31 @@ namespace Draftsocket
                     //Don't do anything, return a TERM message to server
                     Message = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
                     break;
+                case Protocol.CommonAction.BATCH:
+                    //Batch will invoke a recursive call of DispatchReply
+                    Message = this.Batch(Reply);
+                    break;
                 case Protocol.ServerAction.SETEVENT:
                     Message = this.SetEvent(Reply);
                     break;
-                case Protocol.ServerAction.REQUEST_USER_INPUT:
+                case Protocol.AutocadAction.REQUEST_USER_INPUT:
                     Message = this.GetStrings(Reply);
                     break;
                 case Protocol.ServerAction.WRITE:
                     Message = this.Write(Reply);
                     break;
-                case Protocol.ServerAction.GET_ENTITY_ID:
+                case Protocol.AutocadAction.GET_ENTITY_ID:
                     Message = this.GetEntity(Reply);
+                    break;
+                case Protocol.AutocadAction.GET_KEYWORD:
+                    Message = this.GetKeyword(Reply);
                     break;
                 case Protocol.ServerAction.TRANSACTION_START:
                     Message = this.Transaction(Reply);
                     break;
-                case Protocol.ServerAction.TRANSACTION_GETOBJECT:
+                case Protocol.AutocadAction.GETOBJECT:
                     break;
-                case Protocol.ServerAction.TRANSACTION_MANIPULATE_DB:
+                case Protocol.AutocadAction.MANIPULATE_DB:
                     break;
                 case Protocol.ServerAction.TRANSACTION_COMMIT:
                     Message = new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
@@ -115,7 +117,7 @@ namespace Draftsocket
                 PromptEntityOptions peo;
                 try
                 {
-                    peo = new PromptEntityOptions((string)PromptDict[AutoCADKeywords.Prompt]);
+                    peo = new PromptEntityOptions((string)PromptDict[Protocol.Local.Prompt]);
                 }
                 catch
                 {
@@ -123,10 +125,10 @@ namespace Draftsocket
                 }
 
                 object value;
-                if (PromptDict.TryGetValue(AutoCADKeywords.RejectMessage, out value))
+                if (PromptDict.TryGetValue(Protocol.Local.RejectMessage, out value))
                     peo.SetRejectMessage((string)value);
 
-                if (PromptDict.TryGetValue(AutoCADKeywords.AllowedClass, out value))
+                if (PromptDict.TryGetValue(Protocol.Local.AllowedClass, out value))
                     foreach (string Type in (List<string>)value)
                         peo.AddAllowedClass(Protocol.EntityTypes[Type], false);
 
@@ -137,7 +139,7 @@ namespace Draftsocket
 
                 //Memoization: if a name field was set in the payload item of reply message,
                 //keep the result (per) in SavedObjects
-                if (PromptDict.TryGetValue(AutoCADKeywords.Name, out value))
+                if (PromptDict.TryGetValue(Protocol.Local.Name, out value))
                     this.SavedObjects.Add((string) value, per);
             }
 
@@ -147,22 +149,16 @@ namespace Draftsocket
             return message;
         }
 
+
+        private ClientMessage Batch(ServerMessage reply)
+        {
+            ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
+            message.SetPayload("No result");
+            return message;
+        }
+
         private ClientMessage Transaction(ServerMessage reply)
         {
-
-            /*PromptStringOptions pso = new PromptStringOptions("\n" + reply.Payload);
-            //bool value = true;
-            object value;
-            if (reply.Parameters.TryGetValue("AllowSpaces", out value))
-                pso.AllowSpaces = (bool)value;
-            else
-                pso.AllowSpaces = true;
-
-            PromptResult pr = ed.GetString(pso);
-
-            if (pr.Status != PromptStatus.OK)
-                return new SocketMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);*/
-
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
             message.SetPayload("No result");
             return message;
@@ -229,8 +225,9 @@ namespace Draftsocket
                 var obj2 = obj as PromptEntityResult;
                 if(obj2 != null)
                 {
-                    member.Add("ObjectID", obj2.ObjectId.ToString());
-                    member.Add("Handle", obj2.ObjectId.Handle.Value);
+                    member.Add(Protocol.Local.ObjectID, obj2.ObjectId.ToString());
+                    member.Add(Protocol.Local.Handle, obj2.ObjectId.Handle.Value);
+                    member.Add(Protocol.Local.TypeName, obj2.GetType().Name);
                 }
                 retval.Add(member);
             }

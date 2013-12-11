@@ -12,12 +12,13 @@ namespace ShadowbinderClient
     public class PythonCommands
     {
 
+
         [CommandMethod("Handshake")]
         public void Repent()
         {
-            Draftsocket.Transport Transport = new Draftsocket.Transport(); 
+            Draftsocket.Transport Transport = new Draftsocket.Transport();
             Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
-            ClientMessage Message = Protocol.NewCommand("Handshake");
+            ClientMessage Message = Draftsocket.GeneralProtocol.NewCommand("Handshake");
             Transport.CommandLoop(Session, Message);
         }
 
@@ -26,7 +27,7 @@ namespace ShadowbinderClient
         {
             Draftsocket.Transport Transport = new Draftsocket.Transport();
             Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
-            ClientMessage Message = Protocol.NewCommand("Inform");
+            ClientMessage Message = GeneralProtocol.NewCommand("Inform");
             Transport.CommandLoop(Session, Message);
         }
 
@@ -35,8 +36,9 @@ namespace ShadowbinderClient
         {
             Draftsocket.Transport Transport = new Draftsocket.Transport();
             Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
-            ClientMessage Message = Protocol.NewCommand("Inform2");
+            ClientMessage Message = GeneralProtocol.NewCommand("Inform2");
             Transport.CommandLoop(Session, Message);
+
         }
 
         [CommandMethod("ServerSE")]
@@ -44,7 +46,7 @@ namespace ShadowbinderClient
         {
             Draftsocket.Transport Transport = new Draftsocket.Transport();
             Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
-            ClientMessage Message = Protocol.NewCommand("ServerSE");
+            ClientMessage Message = GeneralProtocol.NewCommand("ServerSE");
             Transport.CommandLoop(Session, Message);
         }
 

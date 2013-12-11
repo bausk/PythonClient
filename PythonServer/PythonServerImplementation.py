@@ -10,8 +10,10 @@ import collections
 import time
 import zmq
 from zmq.eventloop import ioloop
-from MessageServer import Message, MessageFactory, Handler, Procedure, Protocol, state, AutoCAD
+from MessageServer import Message, Handler, Procedure, Protocol, state, AutoCAD
+import Payload
 import AutoCAD
+from AutoCAD import AutocadMessageFactory as MessageFactory
 #from test_decorator_tracker import *
 
 ALIVE_URL = 'tcp://127.0.0.1:5556'
@@ -67,23 +69,35 @@ class ServerSE(Procedure):
 
     @state(0)
     def state0(self, reply):
-        prompt1 = AutoCAD.GetSelectionOptions(Prompt = "Choose first entity", Name = "obj1")
-        prompt2 = AutoCAD.GetSelectionOptions(Prompt = "Choose second entity", Name = "obj2")
+        prompt1 = AutoCAD.GetEntityOptions(Prompt = "\nChoose first entity", Name = "obj1")
+        prompt2 = AutoCAD.GetEntityOptions(Prompt = "\nChoose second entity", Name = "obj2")
         Options = [prompt1, prompt2]
         message = MessageFactory.GetEntity(Options)
         return message
 
     @state(1)
     def state1(self, reply = Message()):
-        self.entity1, self.entity2 = reply.GetDataAsDicts()
-        message = MessageFactory.Write("OK")
-        return message
+        self.entity1, self.entity2 = Payload.GetEntity(reply)
+        message1 = MessageFactory.StartTransaction()
+        message2 = MessageFactory.GetObjectForRead(self.entity1.ObjectId, self.entity2.ObjectId)
+        prompt1 = AutoCAD.GetKeywordOptions(Prompt = "\nSwap their identities?", Keywords = ["Yes", "No"], Default = "Yes", AllowInput = False, Name = "result")
+        message3 = MessageFactory.GetKeywords(prompt1)
+        
+        batchmessage = MessageFactory.Batch(message1, message2, message3)
+        return batchmessage
 
     @state(2)
     def state2(self, reply):
-        message = MessageFactory.Write("OK")
-        message.Terminate()
+        message1 = MessageFactory.Write("OK")
+        message2 = MessageFactory.CommitTransaction()
+        message2.Terminate()
         return message
+
+class foo(object):
+    class bar(object):
+        @classmethod
+        def baz(cls):
+            print cls
 
 
 def main():

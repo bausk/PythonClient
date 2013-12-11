@@ -16,6 +16,7 @@ import uuid
 import AutoCAD
 from Protocol import Protocol
 from Message import Message, MessageFactory
+import weakref
 
 def _json_object_hook(d): return namedtuple('Message', d.keys())(*d.values())
 
@@ -97,23 +98,26 @@ class Handler(object):
             try:
                 WorkerProcedure = self.dInstantiatedProcedures[MethodUUID]
                 mMessage = WorkerProcedure(mReply) #actual call
-                mMessage.Callback = MethodUUID #here? doubtful
             except Exception, ex:
                 mMessage = MessageFactory.Error(ex, MethodIdentifier, self.ErrorMessages)
 
+            mMessage.Callback = MethodUUID #here? doubtful
             stringReply = simplejson.dumps(mMessage.__dict__)
             alive_socket.send(stringReply)
+
         else:
             #Invoked after reply is received for a TERM message.
             #Incoming action is a demand to terminate all work.
             #Kill the instance bound to incoming callback, exit
-
-            del self.dInstantiatedProcedures[MethodUUID]
-            if mReply.Status.upper() == Protocol.Status.FINISH:
-                #Invoked when clients says its reply is the last message.
-                #Don't bother sending anything, kill the instance, exit
-                del WorkerProcedure
-
+            try:
+                del self.dInstantiatedProcedures[MethodUUID]
+                if mReply.Status.upper() == Protocol.Status.FINISH:
+                    #Invoked when clients says its reply is the last message.
+                    #Don't bother sending anything, kill the instance, exit
+                    if WorkerProcedure in locals():
+                        del WorkerProcedure
+            except Exception, ex:
+                print(ex.message)
 
         #Test string: '{"Status": "_ONHOLD", "ContentType": "NONE", "Parameters": [{"Prompt": "Choose first entity"}, {}], "Callback": "E7C2B6230C8647059ACEC108F957D3F5", "Action": "GET_ENTITY", "Payload": null}'
 
