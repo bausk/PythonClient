@@ -38,49 +38,58 @@ namespace Draftsocket
 
         public List<Dictionary<string, object>> Payload //ALWAYS expect a list of dicts
         { get; set; }
-            public string Action { get; set; }
-            public string Callback { get; set; }
-            public string Status { get; set; }
-            public object Parameters { get; set; }
+        public string Action { get; set; }
+        public string Callback { get; set; }
+        public string Status { get; set; }
+        public object Parameters { get; set; }
 
-            public bool AddPayloadItem(object Input)
+        public bool AddPayloadItem(object Input)
+        {
+            //If the Input is a dictionary, then just add its fields at first level
+            //If the Input is not a dictionary, put in in the DEFAULT field of the new Payload member.
+            Type T = Input.GetType();
+            if (T.IsGenericType && T.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+                this.Payload.Add((Dictionary<string, object>)Input);
+            else
             {
-                //If the Input is a dictionary, then just add its fields at first level
-                //If the Input is not a dictionary, put in in the DEFAULT field of the new Payload member.
-                Type T = Input.GetType();
-                if (T.IsGenericType && T.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-                    this.Payload.Add((Dictionary<string, object>)Input);
-                else
-                {
-                    this.Payload.Add(new Dictionary<string, object>());
-                    Payload.Last().Add(GeneralProtocol.Keywords.DEFAULT, Input);
-                }
-
-                return true;
+                this.Payload.Add(new Dictionary<string, object>());
+                Payload.Last().Add(GeneralProtocol.Keywords.DEFAULT, Input);
             }
 
-            public void SetPayload(object Input)
+            return true;
+        }
+
+        public void SetPayload(object Input)
+        {
+            //Accepted Payload can be a List or not a List
+            //List means multiple inputs so is treated sequentially
+            this.Payload = new List<Dictionary<string, object>>();
+            Type T = Input.GetType();
+            if (T.IsGenericType && T.GetGenericTypeDefinition() == typeof(List<>))
             {
-                //Accepted Payload can be a List or not a List
-                //List means multiple inputs so is treated sequentially
-                this.Payload = new List<Dictionary<string, object>>();
-                Type T = Input.GetType();
-                if (T.IsGenericType && T.GetGenericTypeDefinition() == typeof(List<>))
+                foreach (object Item in (IEnumerable<object>)Input)
                 {
-                    foreach (object Item in (IEnumerable<object>)Input)
-                    {
-                        AddPayloadItem(Item);
-                    }
-                }
-                else
-                {
-                    AddPayloadItem(Input);
+                    AddPayloadItem(Item);
                 }
             }
-            public void SetFinishedStatus()
+            else
             {
-                this.Status = GeneralProtocol.Status.FINISH;
+                AddPayloadItem(Input);
             }
+        }
+        public void SetFinishedStatus()
+        {
+            this.Status = GeneralProtocol.Status.FINISH;
+        }
+
+        public void SetNames(ServerMessage reply)
+        {
+            var payload = reply.Payload;
+            for(int i = 0; i < payload.Count; i++)
+                {
+                    this.Payload[i].Add(GeneralProtocol.Keywords.NAME, (string)payload[i][GeneralProtocol.Keywords.NAME]);
+                }
+        }
     }
 
     public class ServerMessage : SocketMessage

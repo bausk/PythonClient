@@ -7,9 +7,9 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.EditorInput;
 
-namespace Draftsocket
+namespace Draftsocket.AutoCAD
 {
-    public partial class AutoCAD : ISession
+    public partial class Session : ISession
     {
         public ClientMessage GetKeyword(ServerMessage reply)
         {
@@ -50,13 +50,14 @@ namespace Draftsocket
 
                     //Memoization: if a name field was set in the payload item of reply message,
                     //keep the result (per) in SavedObjects
-                    if (PromptDict.TryGetValue(Protocol.Local.Name, out value))
+                    if (PromptDict.TryGetValue(GeneralProtocol.Keywords.NAME, out value))
                         this.SavedObjects.Add((string)value, pkr);
                 }
 
                 ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
-                List<Dictionary<string, object>> DictResult = this.ObjectsToDicts(Result);
+                List<Dictionary<string, object>> DictResult = this.MakePayload(Result);
                 message.SetPayload(DictResult);
+                message.SetNames(reply);
                 return message;
         }
     }

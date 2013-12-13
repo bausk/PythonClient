@@ -1,5 +1,6 @@
 ﻿using Autodesk.AutoCAD.Runtime;
 using Draftsocket;
+using Draftsocket.AutoCAD;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -17,7 +18,7 @@ namespace ShadowbinderClient
         public void Repent()
         {
             Draftsocket.Transport Transport = new Draftsocket.Transport();
-            Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
+            var Session = new Draftsocket.AutoCAD.Session(Transport);
             ClientMessage Message = Draftsocket.GeneralProtocol.NewCommand("Handshake");
             Transport.CommandLoop(Session, Message);
         }
@@ -26,7 +27,7 @@ namespace ShadowbinderClient
         public void Inform()
         {
             Draftsocket.Transport Transport = new Draftsocket.Transport();
-            Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
+            var Session = new Draftsocket.AutoCAD.Session(Transport);
             ClientMessage Message = GeneralProtocol.NewCommand("Inform");
             Transport.CommandLoop(Session, Message);
         }
@@ -35,7 +36,7 @@ namespace ShadowbinderClient
         public void Inform2()
         {
             Draftsocket.Transport Transport = new Draftsocket.Transport();
-            Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
+            var Session = new Draftsocket.AutoCAD.Session(Transport);
             ClientMessage Message = GeneralProtocol.NewCommand("Inform2");
             Transport.CommandLoop(Session, Message);
 
@@ -45,7 +46,7 @@ namespace ShadowbinderClient
         public void ServerSE()
         {
             Draftsocket.Transport Transport = new Draftsocket.Transport();
-            Draftsocket.AutoCAD Session = new Draftsocket.AutoCAD(Transport);
+            var Session = new Draftsocket.AutoCAD.Session(Transport);
             ClientMessage Message = GeneralProtocol.NewCommand("ServerSE");
             Transport.CommandLoop(Session, Message);
         }

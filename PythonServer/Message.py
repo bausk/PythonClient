@@ -56,6 +56,10 @@ class Message(object):
 
 class MessageFactory(object):
     @classmethod
+    def New(cls, action, status, payload, parameters):
+        return Message(Action = action, Status = status, Payload = payload, Parameters = parameters)
+
+    @classmethod
     def Error(cls, error, id, ErrorMessages):
         message = Message(Action = Protocol.ServerAction.WRITE, Payload = ErrorMessages[type(error)].format(id, error.message), Status = Protocol.Status.FINISH)
         return message

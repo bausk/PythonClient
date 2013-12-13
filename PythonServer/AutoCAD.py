@@ -11,7 +11,7 @@ def GetEntityOptions(Prompt = None, AllowedClasses = None, RejectMessage = None,
     if RejectMessage is not None:
         dictionary[Protocoll.Local.RejectMessage] = RejectMessage
     if Name is not None:
-        dictionary[Protocol.Local.Name] = Name
+        dictionary[Protocol.Keywords.NAME] = Name
     return dictionary
 
 def GetKeywordOptions(Prompt = None, Default = None, AllowInput = None, Keywords = None, Name = None):
@@ -27,7 +27,7 @@ def GetKeywordOptions(Prompt = None, Default = None, AllowInput = None, Keywords
     else:
         dictionary[Protocol.Local.Keywords] = [Keywords]
     if Name is not None:
-        dictionary[Protocol.Local.Name] = Name
+        dictionary[Protocol.Keywords.NAME] = Name
     return dictionary
 
 class AutocadMessageFactory(MessageFactory):

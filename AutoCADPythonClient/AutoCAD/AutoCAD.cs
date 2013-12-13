@@ -6,11 +6,9 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.EditorInput;
 
-namespace Draftsocket
+namespace Draftsocket.AutoCAD
 {
-
-
-    public partial class AutoCAD : ISession
+    public partial class Session : ISession
     {
         private Document doc { get; set; }
         private Database db { get; set; }
@@ -18,7 +16,7 @@ namespace Draftsocket
         public Dictionary<string, object> SavedObjects { get; set; }
 
 
-        public AutoCAD(Transport transport)
+        public Session(Transport transport)
         {
             this.doc = Application.DocumentManager.MdiActiveDocument;
             this.db = doc.Database;
@@ -104,6 +102,7 @@ namespace Draftsocket
                 }
             }
             message.SetPayload(replies);
+            message.SetNames(reply);
             return message;
         }
 
@@ -139,13 +138,14 @@ namespace Draftsocket
 
                 //Memoization: if a name field was set in the payload item of reply message,
                 //keep the result (per) in SavedObjects
-                if (PromptDict.TryGetValue(Protocol.Local.Name, out value))
+                if (PromptDict.TryGetValue(GeneralProtocol.Keywords.NAME, out value))
                     this.SavedObjects.Add((string) value, per);
             }
 
             ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
             List<Dictionary<string,object>> DictResult = this.ObjectsToDicts(Result);
             message.SetPayload(DictResult);
+            message.SetNames(reply);
             return message;
         }
 
@@ -220,6 +220,8 @@ namespace Draftsocket
             {
                 Dictionary<string, object> member = new Dictionary<string, object>();
                 member.Add(Protocol.Keywords.DEFAULT, obj);
+                //Todo: if there's a name, add name as name
+                //WORK HERE
 
                 Type Type = obj.GetType();
                 var obj2 = obj as PromptEntityResult;

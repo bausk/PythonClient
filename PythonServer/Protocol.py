@@ -26,14 +26,7 @@ class Protocol(object):
 
     class Keywords:
         DEFAULT = "DEFAULT"
-        OBJECT = "OBJECT" #Deprecated
-
-    class PayloadTypes:
-        STRING = "STRING"
-        LIST = "LIST"
-        DICT = "DICT"
-        LISTOFSTRINGS = "LISTOFSTRINGS"
-
+        NAME = "NAME"
 
 class AutoCADProtocol(Protocol):
 
@@ -52,29 +45,14 @@ class AutoCADProtocol(Protocol):
 
 
     class Local:
-
         Prompt = "PROMPT"
         Default = "DEFAULT"
         RejectMessage = "REJECTMESSAGE"
         AllowedClass = "ALLOWEDCLASS"
-        Name = "NAME"
         AllowNone = "ALLOWNONE"
         Keywords = "KEYWORDS"
         AllowArbitraryInput = "ALLOWARBINPUT"
-
         ForRead = "FORREAD"
-
         ObjectID = "KEY_OBJECTID"
         TypeName = "KEY_TYPENAME"
         Handle = "KEY_HANDLE"
-
-    #types
-    #Types = {
-    #            type(0):"INT",
-    #            type(""):"STRING",
-    #            type([]):"LIST",
-    #            type({}):"DICTIONARY",
-    #            object:"OBJECT",
-    #            type(None):"NONE"
-    #            }
-

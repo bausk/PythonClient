@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using Autodesk.AutoCAD.DatabaseServices;
 
-namespace Draftsocket
+namespace Draftsocket.AutoCAD
 {
-    public partial class AutoCAD : ISession
+    public partial class Session : ISession
     {
         public class Protocol : GeneralProtocol
         {
@@ -15,6 +15,8 @@ namespace Draftsocket
                 public const string GETOBJECT = "TR_GET_OBJECT";
                 public const string MANIPULATE_DB = "TR_MANIPULATE_DB";
                 public const string REQUEST_USER_INPUT = "REQUEST_INPUT";
+                public const string GET_OBJECTS = "GET_OBJECTS";
+
                 public class DBObject
                 {
                     public static readonly string UpgradeOpen = "UPGRADEOPEN";
@@ -30,14 +32,17 @@ namespace Draftsocket
                 public static readonly string Default = "DEFAULT";
                 public static readonly string RejectMessage = "REJECTMESSAGE";
                 public static readonly string AllowedClass = "ALLOWEDCLASS";
-                public static readonly string Name = "NAME";
                 public static readonly string AllowNone = "ALLOWNONE";
                 public static readonly string Keywords = "KEYWORDS";
                 public static readonly string AllowArbitraryInput = "ALLOWARBINPUT";
 
+                public static readonly string ForRead = "FORREAD";
+
                 public static readonly string ObjectID = "KEY_OBJECTID";
                 public static readonly string TypeName = "KEY_TYPENAME";
                 public static readonly string Handle = "KEY_HANDLE";
+                public static readonly string Status = "STATUS";
+                public static readonly string StringResult = "STRINGRESULT";
 
 
             }

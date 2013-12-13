@@ -47,6 +47,7 @@ namespace Draftsocket
         public static class Keywords
         {
             public const string DEFAULT = "DEFAULT";
+            public const string NAME = "NAME";
         };
 
         public static bool CheckForExit(SocketMessage Message)
