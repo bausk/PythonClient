@@ -29,16 +29,15 @@
   <ItemGroup>
     <Compile Include="AutoCAD.py" />
     <Compile Include="Message.py" />
-    <Compile Include="module2.py" />
     <Compile Include="Payload.py" />
     <Compile Include="Protocol.py" />
     <Compile Include="Shadowbinder.py" />
     <Compile Include="MessageServer.py" />
-    <Compile Include="module1.py" />
     <Compile Include="test_instance_tracker.py" />
     <Compile Include="test_metaclass_tracker.py" />
     <Compile Include="test_decorator_tracker.py" />
     <Compile Include="PythonServerImplementation.py" />
+    <Compile Include="test_partial.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>

@@ -77,7 +77,7 @@ class ServerSE(Procedure):
 
     @state(1)
     def state1(self, reply = Message()):
-        self.entity1, self.entity2 = Payload.GetEntity(reply)
+        self.entity1, self.entity2 = Payload.GetEntities(reply)
         message1 = MessageFactory.StartTransaction()
         message2 = MessageFactory.GetObjectForRead(self.entity1.ObjectId, self.entity2.ObjectId)
         prompt1 = AutoCAD.GetKeywordOptions(Prompt = "\nSwap their identities?", Keywords = ["Yes", "No"], Default = "Yes", AllowInput = False, Name = "result")

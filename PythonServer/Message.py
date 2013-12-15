@@ -23,16 +23,19 @@ class Message(object):
         """
         self.Payload = []
         if isinstance(value, list) or isinstance(value, tuple):
+            #Lists and Tuples are processed to place each
             for item in value:
                 if isinstance(item, str):
                     self.Payload.append({Protocol.Keywords.DEFAULT: item})
                 elif isinstance(item, dict):
                     self.Payload.append(item)
                 else:
-                    self.Payload.append({Protocol.Keywords.OBJECT: item})
+                    self.Payload.append({Protocol.Keywords.DEFAULT: item})
         elif isinstance(value, dict):
+            #Dictionaries are added as-is
             self.Payload.append(value)
         else:
+            #Everything else is added under DEFAULT field
             self.Payload.append({Protocol.Keywords.DEFAULT: value})
 
     def GetDataAsRaw(self):
@@ -56,7 +59,7 @@ class Message(object):
 
 class MessageFactory(object):
     @classmethod
-    def New(cls, action, status, payload, parameters):
+    def New(cls, action = None, status = None, payload = None, parameters = None):
         return Message(Action = action, Status = status, Payload = payload, Parameters = parameters)
 
     @classmethod
