@@ -1,5 +1,4 @@
-﻿import MessageServer
-from Message import Message, MessageFactory
+﻿from PythonServer.Message import Message, MessageFactory
 from Protocol import AutoCADProtocol as Protocol
 
 def GetEntityOptions(Prompt = None, AllowedClasses = None, RejectMessage = None, Name = None):

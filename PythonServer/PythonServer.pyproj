@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>4bcb88af-57c0-4def-afaa-9b7140bbb40d</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>PythonServerImplementation.py</StartupFile>
+    <StartupFile>test_import.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -27,17 +27,28 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="AutoCAD.py" />
+    <Compile Include="DraftSocketServer\Autocad\AcadUtility.py" />
+    <Compile Include="DraftSocketServer\Autocad\Payload.py" />
+    <Compile Include="DraftSocketServer\Autocad\__init__.py" />
+    <Compile Include="DraftSocketServer\Message.py" />
+    <Compile Include="DraftSocketServer\MessageServer.py" />
+    <Compile Include="DraftSocketServer\Protocol.py" />
+    <Compile Include="DraftSocketServer\Types.py" />
+    <Compile Include="DraftSocketServer\__init__.py" />
+    <Compile Include="test_partials.py" />
     <Compile Include="Message.py" />
-    <Compile Include="Payload.py" />
     <Compile Include="Protocol.py" />
-    <Compile Include="Shadowbinder.py" />
     <Compile Include="MessageServer.py" />
     <Compile Include="test_instance_tracker.py" />
     <Compile Include="test_metaclass_tracker.py" />
     <Compile Include="test_decorator_tracker.py" />
     <Compile Include="PythonServerImplementation.py" />
-    <Compile Include="test_partial.py" />
+    <Compile Include="test_import.py" />
+    <Compile Include="Types.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DraftSocketServer\" />
+    <Folder Include="DraftSocketServer\Autocad\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>

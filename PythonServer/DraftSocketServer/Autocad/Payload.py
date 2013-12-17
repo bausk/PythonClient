@@ -1,7 +1,6 @@
-import Message
-from Protocol import AutoCADProtocol as Protocol
-from Message import Message, MessageFactory
-from Types import Struct
+from ..Protocol import AutoCADProtocol as Protocol
+from ..Message import Message, MessageFactory
+from ..Types import Struct
 
 def GetEntities(reply):
     """Returns a tuple of entities from a GetEntities reply

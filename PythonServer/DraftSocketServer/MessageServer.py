@@ -13,9 +13,9 @@ import zmq
 from zmq.eventloop import ioloop
 from functools import wraps
 import uuid
+
 from Protocol import Protocol
 from Message import Message, MessageFactory
-import weakref
 
 def _json_object_hook(d): return namedtuple('Message', d.keys())(*d.values())
 

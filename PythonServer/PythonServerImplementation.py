@@ -10,10 +10,10 @@ import collections
 import time
 import zmq
 from zmq.eventloop import ioloop
-from MessageServer import Message, Handler, Procedure, Protocol, state, AutoCAD
-import Payload
-import AutoCAD
-from AutoCAD import AutocadMessageFactory as MessageFactory
+from MessageServer import Message, Handler, Procedure, Protocol, state
+import AutoCAD.Payload as Payload
+from AutoCAD.AcadUtility import AutocadMessageFactory as MessageFactory
+import AutoCAD.AcadUtility as Utility
 #from test_decorator_tracker import *
 
 ALIVE_URL = 'tcp://127.0.0.1:5556'
@@ -69,8 +69,8 @@ class ServerSE(Procedure):
 
     @state(0)
     def state0(self, reply):
-        prompt1 = AutoCAD.GetEntityOptions(Prompt = "\nChoose first entity", Name = "obj1")
-        prompt2 = AutoCAD.GetEntityOptions(Prompt = "\nChoose second entity", Name = "obj2")
+        prompt1 = Utility.GetEntityOptions(Prompt = "\nChoose first entity", Name = "obj1")
+        prompt2 = Utility.GetEntityOptions(Prompt = "\nChoose second entity", Name = "obj2")
         Options = [prompt1, prompt2]
         message = MessageFactory.GetEntity(Options)
         return message
@@ -80,8 +80,9 @@ class ServerSE(Procedure):
         self.entity1, self.entity2 = Payload.GetEntities(reply)
         message1 = MessageFactory.StartTransaction()
         message2 = MessageFactory.GetObjectForRead(self.entity1.ObjectId, self.entity2.ObjectId)
-        prompt1 = AutoCAD.GetKeywordOptions(Prompt = "\nSwap their identities?", Keywords = ["Yes", "No"], Default = "Yes", AllowInput = False, Name = "result")
+        prompt1 = Utility.GetKeywordOptions(Prompt = "\nSwap their identities?", Keywords = ["Yes", "No"], Default = "Yes", AllowInput = False, Name = "result")
         message3 = MessageFactory.GetKeywords(prompt1)
+        message4 = self.entity1.SwapIdWith(self.entity2.ObjectId)
         
         batchmessage = MessageFactory.Batch(message1, message2, message3)
         return batchmessage
@@ -98,7 +99,6 @@ class foo(object):
         @classmethod
         def baz(cls):
             print cls
-
 
 def main():
     script, filename = init()
