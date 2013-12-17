@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>4bcb88af-57c0-4def-afaa-9b7140bbb40d</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>test_import.py</StartupFile>
+    <StartupFile>PythonServerImplementation.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>

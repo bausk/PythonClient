@@ -10,11 +10,12 @@ import collections
 import time
 import zmq
 from zmq.eventloop import ioloop
-from MessageServer import Message, Handler, Procedure, Protocol, state
-import AutoCAD.Payload as Payload
-from AutoCAD.AcadUtility import AutocadMessageFactory as MessageFactory
-import AutoCAD.AcadUtility as Utility
-#from test_decorator_tracker import *
+
+from DraftSocketServer.MessageServer import Handler, Procedure, Protocol, state
+from DraftSocketServer.Message import Message
+from DraftSocketServer.Autocad import Payload
+from DraftSocketServer.Autocad import AcadUtility as Utility
+from DraftSocketServer.Autocad.AcadUtility import AutocadMessageFactory as MessageFactory
 
 ALIVE_URL = 'tcp://127.0.0.1:5556'
 
