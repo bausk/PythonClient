@@ -16,16 +16,17 @@ namespace Draftsocket.AutoCAD
         private Database db { get; set; }
         private Editor ed { get; set; }
         public Dictionary<string, object> SavedObjects { get; set; }
+        private Transport transport { get; set; }
 
-
-        public Session(Transport transport)
+        public Session(Transport tr)
         {
             this.doc = Application.DocumentManager.MdiActiveDocument;
             this.db = doc.Database;
             this.ed = doc.Editor;
-            transport.SendTimeout = 1;
-            transport.ReceiveTimeout = 1;
-            transport.Port = 5556;
+            this.transport = tr;
+            this.transport.SendTimeout = 1;
+            this.transport.ReceiveTimeout = 1;
+            this.transport.Port = 5556;
             this.SavedObjects = new Dictionary<string, object>();
             
         }
