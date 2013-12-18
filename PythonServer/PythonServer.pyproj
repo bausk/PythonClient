@@ -36,15 +36,11 @@
     <Compile Include="DraftSocketServer\Types.py" />
     <Compile Include="DraftSocketServer\__init__.py" />
     <Compile Include="test_partials.py" />
-    <Compile Include="Message.py" />
-    <Compile Include="Protocol.py" />
-    <Compile Include="MessageServer.py" />
     <Compile Include="test_instance_tracker.py" />
     <Compile Include="test_metaclass_tracker.py" />
     <Compile Include="test_decorator_tracker.py" />
     <Compile Include="PythonServerImplementation.py" />
     <Compile Include="test_import.py" />
-    <Compile Include="Types.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DraftSocketServer\" />

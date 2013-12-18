@@ -5,6 +5,8 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.EditorInput;
+using Newtonsoft.Json;
+
 
 namespace Draftsocket.AutoCAD
 {
@@ -152,9 +154,23 @@ namespace Draftsocket.AutoCAD
 
         private ClientMessage Batch(ServerMessage reply)
         {
-            ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
-            message.SetPayload("No result");
-            return message;
+            var response = new ServerMessage();
+            var finalMessage = new ClientMessage();
+            foreach (string SerializedReply in reply.GetPayloadAsStringList())
+            {
+                try
+                {
+                    response = JsonConvert.DeserializeObject<ServerMessage>(SerializedReply);
+                }
+                catch (ArgumentNullException ex)
+                {
+                    response = GeneralProtocol.NewServerError("Server not reached or unknown server error, exiting");
+                }
+                //call the message dispatcher recursively for each deserialized payload item
+                ClientMessage message = this.DispatchReply(response);
+                //Добавить в возврат
+            }
+            return finalMessage;
         }
 
         private ClientMessage Transaction(ServerMessage reply)

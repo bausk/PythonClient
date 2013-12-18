@@ -34,23 +34,22 @@ class AutocadMessageFactory(MessageFactory):
     def GetEntity(cls, prompt):
         """Request entity ID's with arguments as prompts.
         """
-        msg = Message(Action = Protocol.AutocadAction.GET_ENTITY_ID, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = prompt)
-        return msg
+        return Message(Action = Protocol.AutocadAction.GET_ENTITY_ID, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = prompt)
+
     @classmethod
     def GetKeywords(cls, prompt):
         """Request keyword prompts with arguments as prompts.
         """
-        msg = Message(Action = Protocol.AutocadAction.GET_KEYWORD, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = prompt)
-        return msg
+        return Message(Action = Protocol.AutocadAction.GET_KEYWORD, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = prompt)
+
     @classmethod
     def GetUserStrings(cls, *prompts):
         """Forms a message for single user input request. str Prompt is a command line message prompt.
         """
-        msg = Message(Action = Protocol.AutocadAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = [a for a in prompts])
-        return msg
+        return Message(Action = Protocol.AutocadAction.REQUEST_USER_INPUT, Status = Protocol.Status.ONHOLD, Parameters = {}, Payload = [a for a in prompts])
 
     @classmethod
     def GetObjectForRead(cls, *ids):
         """
         """
-        mes = Message(Action = Protocol.AutocadAction.GET_OBJECTS, Status = Protocol.Status.ONHOLD, Parameters = {Protocol.Local.ForRead: true}, Payload = [ids])
+        return Message(Action = Protocol.AutocadAction.GET_OBJECTS, Status = Protocol.Status.ONHOLD, Parameters = {Protocol.Local.ForRead: True}, Payload = [ids])
