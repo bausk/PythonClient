@@ -11,39 +11,30 @@ namespace Draftsocket
     {
         public int SendTimeout { get; set; }
         public int ReceiveTimeout { get; set; }
-        public int Port { get; set; }  
-  
+        public int Port { get; set; }
+        public ZmqSocket Client { get; set; }
 
-        public bool Send(ZmqSocket client, ClientMessage message)
+        public bool Send(ClientMessage message)
         {
-            if (client.ReceiveStatus == ZeroMQ.ReceiveStatus.TryAgain)
+            if (this.Client.ReceiveStatus == ZeroMQ.ReceiveStatus.TryAgain)
             {
                 //This part has to wait until new pattern implementation
                 //Dealer/router for example
-                client.Disconnect("tcp://localhost:" + this.Port.ToString());
+                this.Client.Disconnect("tcp://localhost:" + this.Port.ToString());
                 return false;
             }
-            client.Connect("tcp://localhost:" + this.Port.ToString());
-            client.SendTimeout = new TimeSpan(0, 0, this.SendTimeout);
-            client.ReceiveTimeout = new TimeSpan(0, 0, this.ReceiveTimeout);
+            this.Client.Connect("tcp://localhost:" + this.Port.ToString());
+            this.Client.SendTimeout = new TimeSpan(0, 0, this.SendTimeout);
+            this.Client.ReceiveTimeout = new TimeSpan(0, 0, this.ReceiveTimeout);
             string SerializedMessage = JsonConvert.SerializeObject(message);
-            client.Send(SerializedMessage, Encoding.Unicode);
+            this.Client.Send(SerializedMessage, Encoding.Unicode);
             return true;
         }
 
-        public ServerMessage Receive(ZmqSocket client)
+        public ServerMessage Receive()
         {
-            ServerMessage response = new ServerMessage();
-            string SerializedReply = client.Receive(Encoding.UTF8);//.Remove(0,1);
-            try
-            {
-                response = JsonConvert.DeserializeObject<ServerMessage>(SerializedReply);
-            }
-            catch (ArgumentNullException ex)
-            {
-                response = GeneralProtocol.NewServerError("Server not reached or unknown server error, exiting");
-            }
-            return response;
+            string SerializedReply = this.Client.Receive(Encoding.UTF8);//.Remove(0,1);
+            return this.Deserialize(SerializedReply); 
         }
 
         public void CommandLoop(ISession Session, ClientMessage Message)
@@ -52,16 +43,65 @@ namespace Draftsocket
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
             {
+                this.Client = client;
                 do
                 {
-                    this.Send(client, Message);
+                    this.Send(Message);
                     if (GeneralProtocol.CheckForExit(Message))
                         break;
-                    Reply = this.Receive(client);
+                    Reply = this.Receive();
                     Message = Session.DispatchReply(Reply);
                 } while (true);
             }
         }
+
+        public void TransactionEnabledCommandLoop(ISession Session, ClientMessage Message)
+        {
+            ServerMessage Reply = GeneralProtocol.NewReply();
+            using (ZmqContext context = ZmqContext.Create())
+            using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
+            {
+                this.Client = client;
+                do
+                {
+                    this.Send(Message);
+                    if (GeneralProtocol.CheckForExit(Message))
+                        break;
+                    Reply = this.Receive();
+                    Message = Session.DispatchReply(Reply);
+                } while (true);
+            }
+        }
+
+
+        public ServerMessage Deserialize(string Reply)
+        {
+            var retval = new ServerMessage();
+            try
+            {
+                retval = JsonConvert.DeserializeObject<ServerMessage>(Reply);
+            }
+            catch (ArgumentNullException ex)
+            {
+                retval = GeneralProtocol.NewServerError("Server not reached or unknown server error, exiting");
+            }
+            return retval;
+        }
+
+        public string Serialize(ClientMessage Message)
+        {
+            var retval = "";
+            try
+            {
+                retval = JsonConvert.SerializeObject(Message);
+            }
+            catch (Exception ex)
+            {
+                retval = "SERIALIZATION FAILED!";
+            }
+            return retval;
+        }
+
     }
     
 

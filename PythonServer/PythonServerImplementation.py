@@ -66,8 +66,48 @@ class Inform2(Procedure):
     def state1(self, reply):
         return MessageFactory.Termination()
 
-class ServerSE(Procedure):
+class TestTransaction(Procedure):
 
+    @state(0)
+    def state0(self, reply):
+        return MessageFactory.StartTransaction()
+
+    @state(1)
+    def state1(self, reply):
+        prompt1 = Utility.GetEntityOptions(Prompt = "\nChoose first entity", Name = "obj1")
+        Options = [prompt1]
+        msg2 = MessageFactory.GetEntity(Options)
+        msg3 = MessageFactory.CommitTransaction()
+        msg4 = MessageFactory.StartTransaction()
+        return MessageFactory.Batch(msg2, msg3, msg4)
+
+    @state(1)
+    def state2(self, reply = Message()):
+        self.entity1, self.entity2 = Payload.GetEntities(reply)
+        message1 = MessageFactory.StartTransaction()
+        message2 = MessageFactory.GetObjectForRead(self.entity1.ObjectId, self.entity2.ObjectId)
+        prompt1 = Utility.GetKeywordOptions(
+                                            Prompt = "\nSwap their identities?",
+                                            Keywords = ["Yes", "No"],
+                                            Default = "Yes",
+                                            AllowArbitraryInput = False,
+                                            Name = "result"
+                                            )
+        message3 = MessageFactory.GetKeywords(prompt1)
+        message4 = self.entity1.SwapIdWith(self.entity2.ObjectId)
+        
+        batchmessage = MessageFactory.Batch(message1, message2, message3)
+        return batchmessage
+
+    @state(2)
+    def state3(self, reply = Message()):
+        r1, r2, r3, r4 = reply
+        message1 = MessageFactory.Write("OK")
+        message2 = MessageFactory.CommitTransaction()
+        message2.Terminate()
+        return message
+
+class ServerSE(Procedure):
     @state(0)
     def state0(self, reply):
         prompt1 = Utility.GetEntityOptions(Prompt = "\nChoose first entity", Name = "obj1")
@@ -81,7 +121,13 @@ class ServerSE(Procedure):
         self.entity1, self.entity2 = Payload.GetEntities(reply)
         message1 = MessageFactory.StartTransaction()
         message2 = MessageFactory.GetObjectForRead(self.entity1.ObjectId, self.entity2.ObjectId)
-        prompt1 = Utility.GetKeywordOptions(Prompt = "\nSwap their identities?", Keywords = ["Yes", "No"], Default = "Yes", AllowInput = False, Name = "result")
+        prompt1 = Utility.GetKeywordOptions(
+                                            Prompt = "\nSwap their identities?",
+                                            Keywords = ["Yes", "No"],
+                                            Default = "Yes",
+                                            AllowArbitraryInput = False,
+                                            Name = "result"
+                                            )
         message3 = MessageFactory.GetKeywords(prompt1)
         message4 = self.entity1.SwapIdWith(self.entity2.ObjectId)
         
@@ -89,17 +135,12 @@ class ServerSE(Procedure):
         return batchmessage
 
     @state(2)
-    def state2(self, reply):
+    def state2(self, reply = Message()):
+        r1, r2, r3, r4 = reply
         message1 = MessageFactory.Write("OK")
         message2 = MessageFactory.CommitTransaction()
         message2.Terminate()
         return message
-
-class foo(object):
-    class bar(object):
-        @classmethod
-        def baz(cls):
-            print cls
 
 def main():
     script, filename = init()

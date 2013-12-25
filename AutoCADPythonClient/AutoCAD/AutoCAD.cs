@@ -5,8 +5,6 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.EditorInput;
-using Newtonsoft.Json;
-
 
 namespace Draftsocket.AutoCAD
 {
@@ -17,6 +15,11 @@ namespace Draftsocket.AutoCAD
         private Editor ed { get; set; }
         public Dictionary<string, object> SavedObjects { get; set; }
         private Transport transport { get; set; }
+        private Queue<ServerMessage> CurrentReplyStack { get; set; }
+        private Transaction CurrentTransaction { get; set; }
+        public ClientMessage CurrentMessage { get; set; }
+        private ServerMessage CurrentReply { get; set; }
+        private Boolean CurrentTransactionActive { get; set; }
 
         public Session(Transport tr)
         {
@@ -28,12 +31,100 @@ namespace Draftsocket.AutoCAD
             this.transport.ReceiveTimeout = 1;
             this.transport.Port = 5556;
             this.SavedObjects = new Dictionary<string, object>();
-            
+            this.CurrentReplyStack = new Queue<ServerMessage>();
+            this.CurrentReply = null;
+            this.CurrentMessage = null;
+            this.CurrentTransactionActive = false;
         }
 
-        public ClientMessage DispatchReply(ServerMessage Reply)
+        public ClientMessage DispatchReply(ServerMessage RawReply)
         {
-            ClientMessage Message = new ClientMessage();
+            this.CurrentReply = RawReply;
+            //this.CurrentMessage = new ClientMessage();
+            this.CurrentMessage = null;
+            if (this.CurrentReply.Action == Protocol.CommonAction.BATCH)
+            {
+                this.CurrentMessage = new ClientMessage(Protocol.CommonAction.BATCH, Protocol.Status.OK);
+                foreach (string SerializedReply in this.CurrentReply.GetPayloadAsStringList())
+                    //Add all nested messages to the message stack
+                    this.CurrentReplyStack.Enqueue(this.transport.Deserialize(SerializedReply));
+            }
+            else
+            {
+                this.CurrentReplyStack.Enqueue(this.CurrentReply);
+            }
+
+
+            while (this.CurrentReplyStack.Count > 0)
+            {
+                var Message = new ClientMessage();
+                var Reply = this.CurrentReplyStack.Dequeue();
+                Message = this.ExecuteServerMessage(Reply);
+                if (this.CurrentMessage.Action == Protocol.CommonAction.BATCH)
+                {
+                    this.CurrentMessage.AddPayloadItem(this.transport.Serialize(Message));
+                }
+                else
+                {
+                    this.CurrentMessage = Message;
+                }
+                //WORK HERE: current implementation accounts for batch variant only
+                
+            }
+
+            //Checking whether remote server wants to finish session gracefully
+            if (Protocol.CheckForExit(this.CurrentReply))
+                //The current server message is the last one.
+                //Inform server about us finishing (while still returning our message).
+                this.CurrentMessage.SetFinishedStatus();
+
+            //Check whether remote server has hung up altogether
+            if (Protocol.CheckForTermination(this.CurrentReply))
+                this.CurrentMessage = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
+
+            this.CurrentMessage.Callback = this.CurrentReply.Callback; //highly doubtful we should do it here
+            return this.CurrentMessage;
+        }
+
+        public void DispatchStack(ServerMessage RawReply)
+        {
+            if (RawReply.Action == Protocol.CommonAction.BATCH)
+            {
+                this.CurrentMessage = new ClientMessage(Protocol.CommonAction.BATCH, Protocol.Status.OK);
+                foreach (string SerializedReply in RawReply.GetPayloadAsStringList())
+                    //Add all nested messages to the message stack
+                    this.CurrentReplyStack.Enqueue(this.transport.Deserialize(SerializedReply));
+
+                while (this.CurrentReplyStack.Count > 0)
+                {
+                    var Message = new ClientMessage();
+                    var Reply = this.CurrentReplyStack.Dequeue();
+                    Message = this.ExecuteServerMessage(Reply);
+                    this.CurrentMessage.AddPayloadItem(this.transport.Serialize(Message));
+                }
+            }
+            else
+            {
+                this.CurrentMessage = this.ExecuteServerMessage(RawReply);
+            }
+
+            //Checking whether remote server wants to finish session gracefully
+            if (Protocol.CheckForExit(this.CurrentReply))
+                //The current server message is the last one.
+                //Inform server about us finishing (while still returning our message).
+                this.CurrentMessage.SetFinishedStatus();
+
+            //Check whether remote server has hung up altogether
+            if (Protocol.CheckForTermination(this.CurrentReply))
+                this.CurrentMessage = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
+
+            this.CurrentMessage.Callback = this.CurrentReply.Callback; //highly doubtful we should do it here
+        }
+
+        private ClientMessage ExecuteServerMessage(ServerMessage Reply)
+        {
+            var Message = new ClientMessage();
+
             switch (Reply.Action)
             {
                 case Protocol.CommonAction.TERMINATE:
@@ -42,6 +133,8 @@ namespace Draftsocket.AutoCAD
                     break;
                 case Protocol.CommonAction.BATCH:
                     //Batch will invoke a recursive call of DispatchReply
+                    //Development note: Only batch messages that have nothing to do with transactions
+                    //should be allowed here
                     Message = this.Batch(Reply);
                     break;
                 case Protocol.ServerAction.SETEVENT:
@@ -59,12 +152,13 @@ namespace Draftsocket.AutoCAD
                 case Protocol.AutocadAction.GET_KEYWORD:
                     Message = this.GetKeyword(Reply);
                     break;
-                case Protocol.ServerAction.TRANSACTION_START:
-                    Message = this.Transaction(Reply);
-                    break;
-                case Protocol.AutocadAction.GETOBJECT:
+                case Protocol.AutocadAction.GET_DB_OBJECTS:
+                    Message = this.GetDBObjects(Reply);
                     break;
                 case Protocol.AutocadAction.MANIPULATE_DB:
+                    break;
+                case Protocol.ServerAction.TRANSACTION_START:
+                    Message = this.TransactionManager(Reply);
                     break;
                 case Protocol.ServerAction.TRANSACTION_COMMIT:
                     Message = new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
@@ -75,159 +169,9 @@ namespace Draftsocket.AutoCAD
                     Message = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
                     break;
             }
-            if (Protocol.CheckForExit(Reply))
-                //The current server message is the last one.
-                //Return the result, whatever it is, and inform about Client finishing.
-                Message.SetFinishedStatus();
-            if (Protocol.CheckForTermination(Reply))
-                Message = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
 
             Message.Callback = Reply.Callback; //highly doubtful we should do it here
             return Message;
-        }
-
-        private ClientMessage GetStrings(ServerMessage reply)
-        {
-            List<string> prompts = reply.GetPayloadAsStringList();
-            List<string> replies = new List<string>();
-            ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
-            foreach (string prompt in prompts)
-            {
-                PromptStringOptions pso = new PromptStringOptions("\n" + prompt);
-                PromptResult pr = ed.GetString(pso);
-                if (pr.Status != PromptStatus.OK)
-                {
-                    //WORK HERE - will need to process canceled inputs
-                }
-                else
-                {
-                    replies.Add(pr.StringResult);
-                }
-            }
-            message.SetPayload(replies);
-            message.SetNames(reply);
-            return message;
-        }
-
-        private ClientMessage GetEntity(ServerMessage reply)
-        {
-
-            List<Dictionary<string,object>> Prompts = reply.Payload;
-            List<PromptEntityResult> Result = new List<PromptEntityResult>();
-            foreach (Dictionary<string, object> PromptDict in Prompts)
-            {
-                PromptEntityOptions peo;
-                try
-                {
-                    peo = new PromptEntityOptions((string)PromptDict[Protocol.Local.Prompt]);
-                }
-                catch
-                {
-                    return new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
-                }
-
-                object value;
-                if (PromptDict.TryGetValue(Protocol.Local.RejectMessage, out value))
-                    peo.SetRejectMessage((string)value);
-
-                if (PromptDict.TryGetValue(Protocol.Local.AllowedClass, out value))
-                    foreach (string Type in (List<string>)value)
-                        peo.AddAllowedClass(Protocol.EntityTypes[Type], false);
-
-                PromptEntityResult per = ed.GetEntity(peo);
-
-                //Add the result to payload (SetPayload called later to form the message).
-                Result.Add(per);
-
-                //Memoization: if a name field was set in the payload item of reply message,
-                //keep the result (per) in SavedObjects
-                if (PromptDict.TryGetValue(GeneralProtocol.Keywords.NAME, out value))
-                    this.SavedObjects.Add((string) value, per);
-            }
-
-            ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
-            List<Dictionary<string,object>> DictResult = this.ObjectsToDicts(Result);
-            message.SetPayload(DictResult);
-            message.SetNames(reply);
-            return message;
-        }
-
-
-        private ClientMessage Batch(ServerMessage reply)
-        {
-            var response = new ServerMessage();
-            var finalMessage = new ClientMessage();
-            foreach (string SerializedReply in reply.GetPayloadAsStringList())
-            {
-                try
-                {
-                    response = JsonConvert.DeserializeObject<ServerMessage>(SerializedReply);
-                }
-                catch (ArgumentNullException ex)
-                {
-                    response = GeneralProtocol.NewServerError("Server not reached or unknown server error, exiting");
-                }
-                //call the message dispatcher recursively for each deserialized payload item
-                ClientMessage message = this.DispatchReply(response);
-                //Добавить в возврат
-            }
-            return finalMessage;
-        }
-
-        private ClientMessage Transaction(ServerMessage reply)
-        {
-            ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
-            message.SetPayload("No result");
-            return message;
-        }
-
-        private ClientMessage Write(ServerMessage reply)
-        {
-            ed.WriteMessage(String.Join(String.Empty, reply.GetPayloadAsStringList()));
-            ClientMessage message = new ClientMessage(Protocol.ClientAction.CONTINUE);
-            return message;
-        }
-
-        private ClientMessage SetEvent(ServerMessage reply)
-        {
-            this.db.ObjectAppended += new ObjectEventHandler(OnObjectCreated);
-            SocketMessage message = new SocketMessage();
-            switch (reply.Payload.ToString())
-            {
-                case "ObjectCreated":
-                    db.ObjectAppended += new ObjectEventHandler(OnObjectCreated);
-                    break;
-                case "CommandEnded":
-                    break;
-                default:
-                    message.Action = "END";
-                    return new ClientMessage();
-            }
-            message.Action = "OK";
-            return new ClientMessage();
-        }
-
-        public void OnObjectCreated(object sender, ObjectEventArgs e)
-        {
-            // Callback binder for real Python event handler
-            // We should prepare a message and send it to Python
-            // to initiate a session
-            //var a = e.DBObject.ObjectId;
-            //SocketWrapper.AutoCAD AutoCADWrapper = new SocketWrapper.AutoCAD();
-            /*string our_reply = "";
-            using (ZmqContext context = ZmqContext.Create())
-            using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
-            {
-                this.Message = new SocketMessage("Init Event", "STRING", "OnObjectCreated");
-                do
-                {
-                    string response = this.SendMessage(client, this.Message);
-                    our_reply = this.DispatchReply(this.Reply);
-                    our_reply = "END";
-                } while (!our_reply.Equals("END"));
-
-            }*/
-
         }
 
         public List<Dictionary<string, object>> ObjectsToDicts<T>(List<T> listobj)

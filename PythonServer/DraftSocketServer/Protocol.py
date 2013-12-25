@@ -33,10 +33,9 @@ class AutoCADProtocol(Protocol):
     class AutocadAction:
         GET_KEYWORD = "GET_KEYWORD"
         GET_ENTITY_ID = "GET_ENTITY"
-        GETOBJECT = "TR_GET_OBJECT"
         MANIPULATE_DB = "TR_MANIPULATE_DB"
         REQUEST_USER_INPUT = "REQUEST_INPUT"
-        GET_OBJECTS = "GET_OBJECTS"
+        GET_DB_OBJECTS = "TR_GET_OBJECTS"
 
         class DBObject:
             UpgradeOpen = "UPGRADEOPEN"

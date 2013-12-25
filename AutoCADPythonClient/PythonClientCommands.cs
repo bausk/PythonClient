@@ -19,7 +19,7 @@ namespace ShadowbinderClient
         {
             Draftsocket.Transport Transport = new Draftsocket.Transport();
             var Session = new Draftsocket.AutoCAD.Session(Transport);
-            ClientMessage Message = Draftsocket.GeneralProtocol.NewCommand("Handshake");
+            var Message = Draftsocket.GeneralProtocol.NewCommand("Handshake");
             Transport.CommandLoop(Session, Message);
         }
 
@@ -51,7 +51,14 @@ namespace ShadowbinderClient
             Transport.CommandLoop(Session, Message);
         }
 
-
+        [CommandMethod("TestTransaction")]
+        public void TestTransaction()
+        {
+            Draftsocket.Transport Transport = new Draftsocket.Transport();
+            var Session = new Draftsocket.AutoCAD.Session(Transport);
+            ClientMessage Message = GeneralProtocol.NewCommand("TestTransaction");
+            Transport.CommandLoop(Session, Message);
+        }
     }
 
 }

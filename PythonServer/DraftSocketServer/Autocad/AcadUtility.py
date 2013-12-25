@@ -13,14 +13,14 @@ def GetEntityOptions(Prompt = None, AllowedClasses = None, RejectMessage = None,
         dictionary[Protocol.Keywords.NAME] = Name
     return dictionary
 
-def GetKeywordOptions(Prompt = None, Default = None, AllowInput = None, Keywords = None, Name = None):
+def GetKeywordOptions(Prompt = None, Default = None, AllowArbitraryInput = None, Keywords = None, Name = None):
     dictionary = {}
     if Prompt is not None:
         dictionary[Protocol.Local.Prompt] = Prompt
     if Default is not None:
         dictionary[Protocol.Local.Default] = Default
-    if AllowInput is not None:
-        dictionary[Protocol.Local.AllowArbitraryInput] = AllowInput
+    if AllowArbitraryInput is not None:
+        dictionary[Protocol.Local.AllowArbitraryInput] = AllowArbitraryInput
     if Keywords is not None and type(Keywords) is list:
         dictionary[Protocol.Local.Keywords] = Keywords
     else:

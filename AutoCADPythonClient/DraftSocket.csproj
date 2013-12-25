@@ -114,6 +114,7 @@
   <ItemGroup>
     <Compile Include="AutoCAD\AutoCAD.cs" />
     <Compile Include="AutoCAD\Protocol.cs" />
+    <Compile Include="AutoCAD\TransactionManager.cs" />
     <Compile Include="AutoCAD\Workers.cs" />
     <Compile Include="AutoCAD\Payload.cs" />
     <Compile Include="Session.cs" />

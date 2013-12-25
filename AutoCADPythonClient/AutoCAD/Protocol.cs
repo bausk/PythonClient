@@ -12,10 +12,9 @@ namespace Draftsocket.AutoCAD
             {
                 public const string GET_KEYWORD = "GET_KEYWORD";
                 public const string GET_ENTITY_ID = "GET_ENTITY";
-                public const string GETOBJECT = "TR_GET_OBJECT";
                 public const string MANIPULATE_DB = "TR_MANIPULATE_DB";
                 public const string REQUEST_USER_INPUT = "REQUEST_INPUT";
-                public const string GET_OBJECTS = "GET_OBJECTS";
+                public const string GET_DB_OBJECTS = "TR_GET_OBJECTS";
 
                 public class DBObject
                 {
