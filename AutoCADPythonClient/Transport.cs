@@ -34,7 +34,8 @@ namespace Draftsocket
         public ServerMessage Receive()
         {
             string SerializedReply = this.Client.Receive(Encoding.UTF8);//.Remove(0,1);
-            return this.Deserialize(SerializedReply); 
+            var reply = this.Deserialize(SerializedReply);
+            return reply;
         }
 
         public void CommandLoop(ISession Session, ClientMessage Message)
@@ -48,31 +49,16 @@ namespace Draftsocket
                 {
                     this.Send(Message);
                     if (GeneralProtocol.CheckForExit(Message))
+                    {
+                        if (GeneralProtocol.CheckForError(Message))
+                            Session.Alert(Message.GetPayloadAsString());
                         break;
+                    }
                     Reply = this.Receive();
                     Message = Session.DispatchReply(Reply);
                 } while (true);
             }
         }
-
-        public void TransactionEnabledCommandLoop(ISession Session, ClientMessage Message)
-        {
-            ServerMessage Reply = GeneralProtocol.NewReply();
-            using (ZmqContext context = ZmqContext.Create())
-            using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
-            {
-                this.Client = client;
-                do
-                {
-                    this.Send(Message);
-                    if (GeneralProtocol.CheckForExit(Message))
-                        break;
-                    Reply = this.Receive();
-                    Message = Session.DispatchReply(Reply);
-                } while (true);
-            }
-        }
-
 
         public ServerMessage Deserialize(string Reply)
         {

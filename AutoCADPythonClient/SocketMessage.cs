@@ -59,6 +59,11 @@ namespace Draftsocket
             return true;
         }
 
+        public string GetPayloadAsString(int num = 0)
+        {
+            return (string)this.Payload[num][GeneralProtocol.Keywords.DEFAULT];
+        }
+
         public void SetPayload(object Input)
         {
             //Accepted Payload can be a List or not a List
@@ -121,10 +126,7 @@ namespace Draftsocket
             return retval;
         }
 
-        public string GetPayloadAsString(int num = 0)
-        {
-            return (string) this.Payload[num][GeneralProtocol.Keywords.DEFAULT];
-        }
+
 
         public object GetPayloadAsObject(int num = 0)
         {

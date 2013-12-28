@@ -15,90 +15,76 @@ namespace Draftsocket.AutoCAD
             var Reply = reply;
             this.CurrentTransaction = this.doc.Database.TransactionManager.StartTransaction();
             //preset message to generic "okay"
-            var Message = new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
-
-            if (this.CurrentMessage != null)
-            {
-                this.CurrentMessage.AddPayloadItem(this.transport.Serialize(Message));
-            }
-
 
             using (this.CurrentTransaction)
             {
                 while (true)
                 {
-                    if (this.CurrentMessage == null)
-                    { //this part is executed when non-batch message is received
-                        //We are in a non-batch so we should set CurrentMessage ourselves
-                        //WORK HERE:
-                        //current framework does not account for non-batch messages received within transaction manager
-                        if (Reply.Action == Protocol.ServerAction.TRANSACTION_START)
-                        {
-                            Message = new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
-                            this.CurrentMessage = Message;
-                        }
+                    while (true)
+                    {
+                        ClientMessage Message = new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
+                        if (Reply.Action == Protocol.ServerAction.TRANSACTION_START) ;
                         else if (Reply.Action == Protocol.ServerAction.TRANSACTION_COMMIT)
                         {
+                            //return control to DispatchStack() if transaction end found
                             this.CurrentTransaction.Commit();
-                            return new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
+                            return Message;
                         }
-                        else if (Reply.Action == Protocol.ServerAction.TRANSACTION_COMMIT)
+                        else if (Reply.Action == Protocol.ServerAction.TRANSACTION_ABORT)
                         {
-                            this.CurrentTransaction.Abort();
-                            return new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
+                            //return control to DispatchStack() if transaction end found
+                            this.CurrentTransaction.Dispose();
+                            return Message;
                         }
                         else
                         {
                             Message = this.ExecuteServerMessage(Reply);
                         }
 
-                    } //end of part executed for a single, non-batch message
-                    else //this part is executed when batch message is not exhausted
-                    {
-                        //Add our input to batch, and exhaust ReplyStack, i.e. duplicate Dispatch() functions before calling Execute()
-                        
-                        while (this.CurrentReplyStack.Count > 0)
+                        if (this.CurrentMessage == null) //CurrentMessage is set in two different ways depending on
+                                                         //whether it's a simple message (then CM == null) or batch
                         {
-                            Reply = this.CurrentReplyStack.Dequeue();
-
-                            if (Reply.Action == Protocol.ServerAction.TRANSACTION_COMMIT)
-                            {
-                                //return control to DispatchStack() if transaction end found
-                                this.CurrentTransaction.Commit();
-                                return new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
-                            }
-                            else if (Reply.Action == Protocol.ServerAction.TRANSACTION_ABORT)
-                            {
-                                //return control to DispatchStack() if transaction end found
-                                this.CurrentTransaction.Abort();
-                                return new ClientMessage(Protocol.ClientAction.CONTINUE, Protocol.Status.OK);
-                            }
-
-                            Message = this.ExecuteServerMessage(Reply);
-                            this.CurrentMessage.AddPayloadItem(this.transport.Serialize(Message));
+                            this.CurrentMessage = Message;
+                            this.CurrentMessage.Callback = Reply.Callback; //only suspect in here
                         }
-                    }//end of part executed while batch message is not exhausted
+                        else
+                            this.CurrentMessage.AddPayloadItem(this.transport.Serialize(Message));
 
-                    this.CurrentMessage.Callback = this.CurrentReply.Callback;
+                        if (this.CurrentReplyStack.Count > 0)
+                            Reply = this.CurrentReplyStack.Dequeue();
+                        else
+                            break;
+                    }
+                        
 
                     this.transport.Send(this.CurrentMessage);
-                    this.CurrentMessage = null;
                     //if (GeneralProtocol.CheckForExit(Message))
                     //    break;
-                    Reply = this.transport.Receive();
+                    this.CurrentReply = this.transport.Receive();
+                    this.CurrentReplyStack.Clear();
+                    this.CurrentMessage = null;
+
+                    if (GeneralProtocol.CheckForExit(this.CurrentReply))
+                    { //if a finishing message is received here, there is an error in server's logic
+                        //this.CurrentTransaction.Abort();
+                        this.CurrentTransaction.Dispose();
+                        return GeneralProtocol.NewClientError("\nERROR: Server finished the current command while inside a transaction. Review server-side procedure.\n");
+                    }
 
                     //We duplicate DispatchReply logic of identifying batch and enqueuing reply(-ies).
-                    if (Reply.Action == Protocol.CommonAction.BATCH)
+                    if (this.CurrentReply.Action == Protocol.CommonAction.BATCH)
                     {
                         this.CurrentMessage = new ClientMessage(Protocol.CommonAction.BATCH, Protocol.Status.OK);
-                        this.CurrentMessage.Callback = Reply.Callback;
-                        foreach (string SerializedReply in Reply.GetPayloadAsStringList())
+                        this.CurrentMessage.Callback = this.CurrentReply.Callback;
+                        foreach (string SerializedReply in this.CurrentReply.GetPayloadAsStringList())
                             //Add all nested messages to the message stack
                             this.CurrentReplyStack.Enqueue(this.transport.Deserialize(SerializedReply));
+                        Reply = this.CurrentReplyStack.Dequeue();
                     }
                     else
                     {
-                        //Reply = this.CurrentReply;
+                        Reply = this.CurrentReply;
+                        //CHANGE TO ENQUEUE!!
                     }
 
                 } //End of cycle executed while transaction is active

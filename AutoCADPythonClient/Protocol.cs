@@ -64,7 +64,13 @@ namespace Draftsocket
             else
                 return false;
         }
-
+        public static bool CheckForError(SocketMessage Message)
+        {
+            if (Message.Action == GeneralProtocol.ClientAction.ERROR)
+                return true;
+            else
+                return false;
+        }
         //client command factories
         public static ClientMessage NewCommand(string Name)
         {
@@ -84,6 +90,17 @@ namespace Draftsocket
             //issue a TERMINATE command to server (causing it to stop servicing the current callback without calling the next State),
             //and exit the command loop permanently.
             ServerMessage M = new ServerMessage(GeneralProtocol.ServerAction.WRITE, GeneralProtocol.Status.TERMINATE);
+            M.SetPayload(Prompt);
+            return M;
+        }
+        public static ClientMessage NewClientError(string Prompt)
+        {
+            //Called when server is not reached or the input can't be understood.
+            //Dispatching this message will cause client to
+            //write a message from Prompt argument,
+            //issue a TERMINATE command to server (causing it to stop servicing the current callback without calling the next State),
+            //and exit the command loop permanently.
+            var M = new ClientMessage(GeneralProtocol.ClientAction.ERROR, GeneralProtocol.Status.FINISH);
             M.SetPayload(Prompt);
             return M;
         }

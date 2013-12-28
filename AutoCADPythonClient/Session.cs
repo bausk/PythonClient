@@ -10,5 +10,6 @@ namespace Draftsocket
         List<Dictionary<string, object>> ObjectsToDicts<T>(List<T> obj);
         ClientMessage DispatchReply(ServerMessage Reply);
         Dictionary<string, object> SavedObjects {get; set;}
+        void Alert(string Message);
     }
 }

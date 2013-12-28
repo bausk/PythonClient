@@ -121,7 +121,6 @@ namespace Draftsocket.AutoCAD
         }
 
 
-
         private ClientMessage Write(ServerMessage reply)
         {
             ed.WriteMessage(String.Join(String.Empty, reply.GetPayloadAsStringList()));
@@ -184,7 +183,7 @@ namespace Draftsocket.AutoCAD
                     if (PromptDict.TryGetValue(Protocol.Local.Prompt, out value))
                         pko = new PromptKeywordOptions((string)PromptDict[Protocol.Local.Prompt]);
                     else
-                        return new ClientMessage(Protocol.ClientAction.ERROR, Protocol.Status.FINISH);
+                        return GeneralProtocol.NewClientError("");
 
                     if (PromptDict.TryGetValue(Protocol.Local.AllowNone, out value))
                         pko.AllowNone = true;

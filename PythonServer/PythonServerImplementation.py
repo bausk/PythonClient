@@ -70,42 +70,46 @@ class TestTransaction(Procedure):
 
     @state(0)
     def state0(self, reply):
-        return MessageFactory.StartTransaction()
+        return MessageFactory.Write("\nState 0\n")
 
     @state(1)
     def state1(self, reply):
-        prompt1 = Utility.GetEntityOptions(Prompt = "\nChoose first entity", Name = "obj1")
-        Options = [prompt1]
-        msg2 = MessageFactory.GetEntity(Options)
-        msg3 = MessageFactory.CommitTransaction()
-        msg4 = MessageFactory.StartTransaction()
-        return MessageFactory.Batch(msg2, msg3, msg4)
-
-    @state(1)
-    def state2(self, reply = Message()):
-        self.entity1, self.entity2 = Payload.GetEntities(reply)
-        message1 = MessageFactory.StartTransaction()
-        message2 = MessageFactory.GetObjectForRead(self.entity1.ObjectId, self.entity2.ObjectId)
-        prompt1 = Utility.GetKeywordOptions(
-                                            Prompt = "\nSwap their identities?",
-                                            Keywords = ["Yes", "No"],
-                                            Default = "Yes",
-                                            AllowArbitraryInput = False,
-                                            Name = "result"
-                                            )
-        message3 = MessageFactory.GetKeywords(prompt1)
-        message4 = self.entity1.SwapIdWith(self.entity2.ObjectId)
-        
-        batchmessage = MessageFactory.Batch(message1, message2, message3)
-        return batchmessage
+        return MessageFactory.StartTransaction()
 
     @state(2)
-    def state3(self, reply = Message()):
-        r1, r2, r3, r4 = reply
-        message1 = MessageFactory.Write("OK")
-        message2 = MessageFactory.CommitTransaction()
-        message2.Terminate()
-        return message
+    def state2(self, reply):
+        return MessageFactory.Write("\nState 2\n")
+
+    @state(3)
+    def state3(self, reply):
+        prompt1 = Utility.GetEntityOptions(Prompt = "\nChoose first entity", Name = "obj1")
+        Options = [prompt1]
+        msg1 = MessageFactory.GetEntity(Options)
+        msg2 = MessageFactory.CommitTransaction()
+        msg3 = MessageFactory.Write("\nState 3\n")
+        msg4 = MessageFactory.StartTransaction()
+        return MessageFactory.Batch(msg1, msg2, msg3, msg4)
+
+    @state(4)
+    def state4(self, reply):
+        return MessageFactory.Batch(
+                                    MessageFactory.Write("\nState 4\n"),
+                                    MessageFactory.CommitTransaction(),
+                                    )
+
+    @state(5)
+    def state5(self, reply):
+        return MessageFactory.Batch(
+                                    MessageFactory.StartTransaction(),
+                                    MessageFactory.Write("\nState 5\n"),
+                                    MessageFactory.CommitTransaction(),
+                                    )
+    @state(6)
+    def state6(self, reply):
+        msg = MessageFactory.StartTransaction()
+        msg.Terminate()
+        return msg
+
 
 class ServerSE(Procedure):
     @state(0)

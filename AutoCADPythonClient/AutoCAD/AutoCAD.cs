@@ -45,6 +45,7 @@ namespace Draftsocket.AutoCAD
             if (this.CurrentReply.Action == Protocol.CommonAction.BATCH)
             {
                 this.CurrentMessage = new ClientMessage(Protocol.CommonAction.BATCH, Protocol.Status.OK);
+                this.CurrentMessage.Callback = this.CurrentReply.Callback; //highly doubtful we should do it here
                 foreach (string SerializedReply in this.CurrentReply.GetPayloadAsStringList())
                     //Add all nested messages to the message stack
                     this.CurrentReplyStack.Enqueue(this.transport.Deserialize(SerializedReply));
@@ -60,7 +61,7 @@ namespace Draftsocket.AutoCAD
                 var Message = new ClientMessage();
                 var Reply = this.CurrentReplyStack.Dequeue();
                 Message = this.ExecuteServerMessage(Reply);
-                if (this.CurrentMessage.Action == Protocol.CommonAction.BATCH)
+                if (this.CurrentMessage != null && this.CurrentMessage.Action == Protocol.CommonAction.BATCH)
                 {
                     this.CurrentMessage.AddPayloadItem(this.transport.Serialize(Message));
                 }
@@ -82,43 +83,8 @@ namespace Draftsocket.AutoCAD
             if (Protocol.CheckForTermination(this.CurrentReply))
                 this.CurrentMessage = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
 
-            this.CurrentMessage.Callback = this.CurrentReply.Callback; //highly doubtful we should do it here
+            //this.CurrentMessage.Callback = this.CurrentReply.Callback; //highly doubtful we should do it here
             return this.CurrentMessage;
-        }
-
-        public void DispatchStack(ServerMessage RawReply)
-        {
-            if (RawReply.Action == Protocol.CommonAction.BATCH)
-            {
-                this.CurrentMessage = new ClientMessage(Protocol.CommonAction.BATCH, Protocol.Status.OK);
-                foreach (string SerializedReply in RawReply.GetPayloadAsStringList())
-                    //Add all nested messages to the message stack
-                    this.CurrentReplyStack.Enqueue(this.transport.Deserialize(SerializedReply));
-
-                while (this.CurrentReplyStack.Count > 0)
-                {
-                    var Message = new ClientMessage();
-                    var Reply = this.CurrentReplyStack.Dequeue();
-                    Message = this.ExecuteServerMessage(Reply);
-                    this.CurrentMessage.AddPayloadItem(this.transport.Serialize(Message));
-                }
-            }
-            else
-            {
-                this.CurrentMessage = this.ExecuteServerMessage(RawReply);
-            }
-
-            //Checking whether remote server wants to finish session gracefully
-            if (Protocol.CheckForExit(this.CurrentReply))
-                //The current server message is the last one.
-                //Inform server about us finishing (while still returning our message).
-                this.CurrentMessage.SetFinishedStatus();
-
-            //Check whether remote server has hung up altogether
-            if (Protocol.CheckForTermination(this.CurrentReply))
-                this.CurrentMessage = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
-
-            this.CurrentMessage.Callback = this.CurrentReply.Callback; //highly doubtful we should do it here
         }
 
         private ClientMessage ExecuteServerMessage(ServerMessage Reply)
@@ -195,6 +161,11 @@ namespace Draftsocket.AutoCAD
                 retval.Add(member);
             }
             return retval;
+        }
+
+        public void Alert(string Message)
+        {
+            ed.WriteMessage(Message);
         }
 
     }
