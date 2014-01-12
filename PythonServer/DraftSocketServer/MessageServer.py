@@ -25,6 +25,11 @@ def Alphanumeric(string):
 def GenerateUuid():
     return str(uuid.uuid4())
 
+def Deserialize(str, type = Message):
+    retval = type()
+    retval.__dict__ = simplejson.loads(str)
+    return retval
+
 class StateSequenceError(Exception):
      def __init__(self, value):
          self.value = value

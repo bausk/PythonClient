@@ -140,7 +140,7 @@ class ServerSE(Procedure):
 
     @state(2)
     def state2(self, reply = Message()):
-        r1, r2, r3, r4 = reply
+        msg, msg2 = reply.UnpackBatch()
         message1 = MessageFactory.Write("OK")
         message2 = MessageFactory.CommitTransaction()
         message2.Terminate()

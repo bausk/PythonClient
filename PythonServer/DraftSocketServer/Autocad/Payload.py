@@ -2,9 +2,9 @@ from ..Protocol import AutoCADProtocol as Protocol
 from ..Message import Message, MessageFactory
 from ..Types import Struct
 
-def GetEntities(reply):
+def GetEntities(reply = Message()):
     """Returns a tuple of entities from a GetEntities reply
-    Usage example: a ,= GetEntity(Message()) - Message() should be a reply from the client
+    Usage example: a ,= GetEntity(ReplyFromClient)
     """
     retval = []
     for payloadItem in reply.Payload:

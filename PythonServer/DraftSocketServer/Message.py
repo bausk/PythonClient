@@ -52,10 +52,19 @@ class Message(object):
 
     def GetDataAsStructs(self):
         #WORK HERE
+        #Probably should return a whatever struct message contains
         if type(self.Payload) is list:
             return (Struct(**a[Protocol.Keywords.DEFAULT]) for a in self.Payload)
         else:
             return self.Payload
+
+    def UnpackBatch(self):
+        retval = []
+        for strmsg in [a[Protocol.Keywords.DEFAULT] for a in self.Payload]:
+            msg = Message()
+            msg.__dict__ = simplejson.loads(strmsg)
+            retval.append(msg)
+        return (retval)
 
 class MessageFactory(object):
     @classmethod
