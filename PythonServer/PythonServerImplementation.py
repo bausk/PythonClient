@@ -147,7 +147,7 @@ class ServerSE(Procedure):
         return message
 
 def main():
-    script, filename = init()
+    #script, filename = init()
     print("Shadowbinder server starting...\n")
     Interaction = Handler()
 
