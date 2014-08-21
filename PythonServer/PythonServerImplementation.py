@@ -3,15 +3,11 @@
 #from __future__ import unicode_literals
 __author__ = "Alex Bausk <bauskas@gmail.com>"
 
-import sys
-import simplejson
 from sys import argv
-import collections
-import time
 import zmq
 from zmq.eventloop import ioloop
 
-from DraftSocketServer.MessageServer import Handler, Procedure, Protocol, state
+from DraftSocketServer.MessageServer import Handler, Procedure, state
 from DraftSocketServer.Message import Message
 from DraftSocketServer.Autocad import Payload
 from DraftSocketServer.Autocad import AcadUtility as Utility
