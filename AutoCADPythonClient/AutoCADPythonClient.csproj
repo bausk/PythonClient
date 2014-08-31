@@ -44,6 +44,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -53,27 +54,33 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AcCoreMgd, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
+      <HintPath>..\..\..\..\Programs\autodesk\Autodesk_ObjectARX_2014_Win_64_and_32Bit\inc\AcCoreMgd.dll</HintPath>
     </Reference>
     <Reference Include="AcDbMgd, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
+      <HintPath>..\..\..\..\Programs\autodesk\Autodesk_ObjectARX_2014_Win_64_and_32Bit\inc\AcDbMgd.dll</HintPath>
     </Reference>
     <Reference Include="AcMgd, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
+      <HintPath>..\..\..\..\Programs\autodesk\Autodesk_ObjectARX_2014_Win_64_and_32Bit\inc\AcMgd.dll</HintPath>
     </Reference>
     <Reference Include="Autodesk.AutoCAD.Interop.Common, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
+      <HintPath>..\..\..\..\Programs\autodesk\Autodesk_ObjectARX_2014_Win_64_and_32Bit\inc-win32\Autodesk.AutoCAD.Interop.Common.dll</HintPath>
     </Reference>
     <Reference Include="Autodesk.AutoCAD.Interop, Version=19.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
+      <HintPath>..\..\..\..\Programs\autodesk\Autodesk_ObjectARX_2014_Win_64_and_32Bit\inc-win32\Autodesk.AutoCAD.Interop.dll</HintPath>
     </Reference>
     <!--ACA References Begin-->
     <!--ACA Refences End-->
