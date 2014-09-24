@@ -6,14 +6,15 @@ __author__ = "Alex Bausk <bauskas@gmail.com>"
 from sys import argv
 import zmq
 from zmq.eventloop import ioloop
-
+print zmq.ETERM
+print zmq.ETERM
 from DraftSocketServer.MessageServer import Handler, Procedure, state
 from DraftSocketServer.Message import Message
 from DraftSocketServer.Autocad import Payload
 from DraftSocketServer.Autocad import AcadUtility as Utility
 from DraftSocketServer.Autocad.AcadUtility import AutocadMessageFactory as MessageFactory
 
-ALIVE_URL = 'tcp://127.0.0.1:5556'
+ALIVE_URL = 'tcp://127.0.0.1:5557'
 
 #class Message(object):
 #    def __init__(self, Action, ContentType, Content):

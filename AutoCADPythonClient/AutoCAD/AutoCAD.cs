@@ -29,7 +29,7 @@ namespace Draftsocket.AutoCAD
             this.transport = tr;
             this.transport.SendTimeout = 1;
             this.transport.ReceiveTimeout = 1;
-            this.transport.Port = 5556;
+            this.transport.Port = 5557;
             this.SavedObjects = new Dictionary<string, object>();
             this.CurrentReplyStack = new Queue<ServerMessage>();
             this.CurrentReply = null;
