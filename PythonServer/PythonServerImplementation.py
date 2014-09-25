@@ -6,8 +6,6 @@ __author__ = "Alex Bausk <bauskas@gmail.com>"
 from sys import argv
 import zmq
 from zmq.eventloop import ioloop
-print zmq.ETERM
-print zmq.ETERM
 from DraftSocketServer.MessageServer import Handler, Procedure, state
 from DraftSocketServer.Message import Message
 from DraftSocketServer.Autocad import Payload

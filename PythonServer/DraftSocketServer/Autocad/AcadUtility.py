@@ -52,4 +52,4 @@ class AutocadMessageFactory(MessageFactory):
     def GetObjectForRead(cls, *ids):
         """
         """
-        return Message(Action = Protocol.AutocadAction.GET_OBJECTS, Status = Protocol.Status.ONHOLD, Parameters = {Protocol.Local.ForRead: True}, Payload = [ids])
+        return Message(Action = Protocol.AutocadAction.GET_DB_OBJECTS, Status = Protocol.Status.ONHOLD, Parameters = {Protocol.Local.ForRead: True}, Payload = [ids])
