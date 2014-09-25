@@ -92,7 +92,10 @@ namespace Draftsocket
             var payload = reply.Payload;
             for(int i = 0; i < payload.Count; i++)
                 {
-                    this.Payload[i].Add(GeneralProtocol.Keywords.NAME, (string)payload[i][GeneralProtocol.Keywords.NAME]);
+                    if (payload[i].ContainsKey(GeneralProtocol.Keywords.NAME))
+                    {
+                        this.Payload[i].Add(GeneralProtocol.Keywords.NAME, (string)payload[i][GeneralProtocol.Keywords.NAME]);
+                    }
                 }
         }
     }
