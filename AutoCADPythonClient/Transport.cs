@@ -6,8 +6,19 @@ using Newtonsoft.Json;
 
 namespace Draftsocket
 {
+    public interface ITransport
+    {
+        bool Send(ClientMessage message);
+        ServerMessage Receive();
+        void CommandLoop(ISession Session, ClientMessage Message);
+        int SendTimeout { get; set; }
+        int ReceiveTimeout { get; set; }
+        int Port { get; set; }
+        ServerMessage Deserialize(string Reply);
+        string Serialize(ClientMessage Message);
+    }
 
-    public class Transport
+    public class Transport : ITransport
     {
         public int SendTimeout { get; set; }
         public int ReceiveTimeout { get; set; }
@@ -87,9 +98,5 @@ namespace Draftsocket
             }
             return retval;
         }
-
     }
-    
-
-
 }

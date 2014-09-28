@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using System.Collections.Generic;
 //using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
@@ -9,7 +8,7 @@ using Autodesk.AutoCAD.EditorInput;
 
 namespace Draftsocket.AutoCAD
 {
-    public partial class Session : ISession
+    public partial class Session2 : ISession
     {
         private Document doc { get; set; }
         private Database db { get; set; }
@@ -22,7 +21,7 @@ namespace Draftsocket.AutoCAD
         private ServerMessage CurrentReply { get; set; }
         private Boolean CurrentTransactionActive { get; set; }
 
-        public Session(ITransport tr)
+        public Session2(ITransport tr)
         {
             this.doc = Application.DocumentManager.MdiActiveDocument;
             this.db = doc.Database;
@@ -38,11 +37,8 @@ namespace Draftsocket.AutoCAD
             this.CurrentTransactionActive = false;
         }
 
-
         public ClientMessage DispatchReply(ServerMessage RawReply)
         {
-
-
             this.CurrentReply = RawReply;
             //this.CurrentMessage = new ClientMessage();
             this.CurrentMessage = null;
@@ -92,31 +88,12 @@ namespace Draftsocket.AutoCAD
         }
 
 
-        public static object FollowPropertyPath(object value, string path)
-        {
-            Type currentType = value.GetType();
 
-            foreach (string propertyName in path.Split('.'))
-            {
-                PropertyInfo property = currentType.GetProperty(propertyName);
-                value = property.GetValue(value, null);
-                currentType = property.PropertyType;
-            }
-            return value;
-        }
 
 
         private ClientMessage ExecuteServerMessage(ServerMessage Reply)
         {
             var Message = new ClientMessage();
-
-            //var commandstring = Reply.Action;
-            string commandstring = "MdiActiveDocument.Database";
-            var aas = Application.DocumentManager.MdiActiveDocument;
-            var obj = FollowPropertyPath(Application.DocumentManager, commandstring);
-
-
-            /*
 
             switch (Reply.Action)
             {
@@ -162,7 +139,6 @@ namespace Draftsocket.AutoCAD
                     Message = new ClientMessage(Protocol.CommonAction.TERMINATE, Protocol.Status.FINISH);
                     break;
             }
-            */
 
             Message.Callback = Reply.Callback; //highly doubtful we should do it here
             return Message;

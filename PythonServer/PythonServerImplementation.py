@@ -3,6 +3,7 @@
 #from __future__ import unicode_literals
 __author__ = "Alex Bausk <bauskas@gmail.com>"
 
+import sys
 from sys import argv
 import zmq
 from zmq.eventloop import ioloop
@@ -141,11 +142,13 @@ class ServerSE(Procedure):
         message2.Terminate()
         return message
 
+def test():
+    pass
+
 def main():
     #script, filename = init()
     print("Shadowbinder server starting...\n")
     Interaction = Handler()
-
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind(ALIVE_URL)

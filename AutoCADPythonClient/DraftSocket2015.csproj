@@ -128,11 +128,19 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <None Include="AutoCAD\AutoCAD - Copy.cs2" />
     <Compile Include="AutoCAD\AutoCAD.cs" />
+    <None Include="AutoCAD\Protocol - Copy.2" />
     <Compile Include="AutoCAD\Protocol.cs" />
     <Compile Include="AutoCAD\TransactionManager.cs" />
     <Compile Include="AutoCAD\Workers.cs" />
     <Compile Include="AutoCAD\Payload.cs" />
+    <Compile Include="RPCCommands.cs" />
+    <Compile Include="RPCCommands.Designer.cs">
+      <DependentUpon>RPCCommands.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
     <Compile Include="Session.cs" />
     <Compile Include="Protocol.cs" />
     <Compile Include="SocketMessage.cs" />
@@ -144,9 +152,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>TestCommands.resx</DependentUpon>
     </Compile>
+    <Compile Include="Transport.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="ReferenceFiler.cs" />
-    <Compile Include="Transport.cs" />
+    <Compile Include="RPCTransport.cs" />
     <Compile Include="PythonClientCommands.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -158,6 +167,12 @@
     <Compile Include="testPurgeDgn.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="RPCCommands.resx">
+      <DependentUpon>RPCCommands.cs</DependentUpon>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>RPCCommands.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="PythonClientCommands.resx">
       <DependentUpon>PythonClientCommands.cs</DependentUpon>
       <Generator>ResXFileCodeGenerator</Generator>

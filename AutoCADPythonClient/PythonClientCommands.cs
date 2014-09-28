@@ -6,8 +6,8 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 
 // This line is not mandatory, but improves loading performances
-[assembly: CommandClass(typeof(ShadowbinderClient.PythonCommands))]
-namespace ShadowbinderClient
+[assembly: CommandClass(typeof(DraftSocket.PythonCommands))]
+namespace DraftSocket
 {
 
     public class PythonCommands
