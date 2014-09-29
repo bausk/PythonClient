@@ -46,6 +46,16 @@ namespace Draftsocket
             return true;
         }
 
+        public bool Send2(Tuple<Dictionary<String, String>, String, List<String>> message)
+        {
+            this.Client.Connect("tcp://localhost:" + this.Port.ToString());
+            this.Client.SendTimeout = new TimeSpan(0, 0, this.SendTimeout);
+            var serializer = MessagePackSerializer.Get<Tuple<Dictionary<String, String>, String, List<String>>>();
+            byte[] SerializedMessage = serializer.PackSingleObject(message);
+            this.Client.Send(SerializedMessage);
+            return true;
+        }
+
         public Tuple<Dictionary<String, String>, String, List<String>> Receive2()
         {
             var message = new byte[96];
@@ -95,6 +105,7 @@ namespace Draftsocket
                     //Execute command,
                     //Send reply,
                     //Check if time to exit (either non-parsable message or "EXIT" received)
+                    
                     //Message = Session.DispatchReply(Reply);
                     //Type myType = Type.GetType("Autodesk.AutoCAD.ApplicationServices.Application");
                     //MemberInfo[] foo = typeof(Application).GetMember("DocumentManager");
@@ -108,8 +119,28 @@ namespace Draftsocket
                         var currentguid = Guid.NewGuid();
                         //CurrentObjects.Add(currentguid, obj);
                         Names.Add(currentguid.ToString(), obj);
+                        //Command executed. build new message. and put object GUID in Item2
+                        var outgoing_message = new Tuple<Dictionary<string, string>, string, List<string>>(
+                            new Dictionary<string, string>()
+                            {
+                                {"message_id", Reply.Item1["message_id"]},
+                                {"method", "GET"},
+                            },
+                            currentguid.ToString(),
+                            new List<string>() { "none" }
+                            );
+                        var result = this.Send2(outgoing_message);
                     }
-                    
+                    if(Reply.Item1["method"] == "INVOKE")
+                    {
+                        var parentObject = Names[Reply.Item1["namespace"]];
+                        string method = Reply.Item2;
+                        string parameter = Reply.Item3[0];
+                        MethodInfo m = parentObject.GetType().GetMethod(method, new Type[] {typeof(string)});
+                        object result = m.Invoke(parentObject, new object[] {parameter});
+
+                    }
+
 
                     //var aaaa = foo.GetValue(Application);
                     //var aas = Application.DocumentManager.MdiActiveDocument;

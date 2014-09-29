@@ -134,6 +134,11 @@
     <Compile Include="AutoCAD\TransactionManager.cs" />
     <Compile Include="AutoCAD\Workers.cs" />
     <Compile Include="AutoCAD\Payload.cs" />
+    <Compile Include="RPCCommands.cs" />
+    <Compile Include="RPCCommands.Designer.cs">
+      <DependentUpon>RPCCommands.cs</DependentUpon>
+    </Compile>
+    <Compile Include="RPCTransport.cs" />
     <Compile Include="Session.cs" />
     <Compile Include="Protocol.cs" />
     <Compile Include="SocketMessage.cs" />
@@ -164,6 +169,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>PythonClientCommands.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RPCCommands.resx">
+      <DependentUpon>RPCCommands.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="TestCommands.resx">
       <DependentUpon>TestCommands.cs</DependentUpon>

@@ -1,4 +1,6 @@
 ﻿using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
 using Draftsocket;
 using Draftsocket.AutoCAD;
 
@@ -17,7 +19,19 @@ namespace DraftSocketCommands
             var Message = Draftsocket.GeneralProtocol.NewCommand("RPC");
             Transport.CommandLoop(Session, Message);
         }
+        [CommandMethod("registerevents")]
+        public void rpccall2()
+        {
+            Application.DocumentManager.MdiActiveDocument.Database.ObjectAppended += new ObjectEventHandler(hndl);
+        }
+
+        public void hndl(object a, ObjectEventArgs b)
+        {
+            Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nMeh.");
+        }
+
 
     }
+
 
 }

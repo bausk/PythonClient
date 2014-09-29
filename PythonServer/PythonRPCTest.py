@@ -37,14 +37,41 @@ def rpc(alive_socket):
 
     byte_reply = alive_socket.recv()
     string_reply = msgpack.unpackb(byte_reply)
-    
+    print string_reply
+
+    message = msgpack.packb(
+        (
+            {"message_id": "1001",
+             "method": "GET",
+             "namespace": string_reply[1]},
+            "Editor",
+            []
+        )
+    )
+
+    alive_socket.send(message)
+    byte_reply = alive_socket.recv()
+    string_reply = msgpack.unpackb(byte_reply)
+    print string_reply
+
+    message = msgpack.packb(
+        (
+            {"message_id": "1001",
+             "method": "INVOKE",
+             "namespace": string_reply[1]},
+            "WriteMessage",
+            ["\n Our test command works! Hello from CPython!"]
+        )
+    )
+
+    alive_socket.send(message)
 
     #messagestr = MessageFactory.Write("Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument")
 
 
 def main():
     # script, filename = init()
-    print("Draftsocket server starting...\n")
+    print("Draftsocket RPC server starting...\n")
     thismodule = sys.modules[__name__]
     Interaction = Client.Handler(thismodule)
 

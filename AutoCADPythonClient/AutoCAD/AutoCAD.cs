@@ -29,7 +29,7 @@ namespace Draftsocket.AutoCAD
             this.ed = doc.Editor;
             this.transport = tr;
             this.transport.SendTimeout = 1;
-            this.transport.ReceiveTimeout = 1;
+            this.transport.ReceiveTimeout = 10;
             this.transport.Port = 5557;
             this.SavedObjects = new Dictionary<string, object>();
             this.CurrentReplyStack = new Queue<ServerMessage>();
@@ -105,7 +105,7 @@ namespace Draftsocket.AutoCAD
             return value;
         }
 
-
+        //deprecated
         private ClientMessage ExecuteServerMessage(ServerMessage Reply)
         {
             var Message = new ClientMessage();
