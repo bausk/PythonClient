@@ -13,7 +13,7 @@ using MsgPack.Serialization;
 namespace Draftsocket
 {
 
-    public class RPCTransport : ITransport
+    public class RPCTransport
     {
         public int SendTimeout { get; set; }
         public int ReceiveTimeout { get; set; }
@@ -24,6 +24,10 @@ namespace Draftsocket
             {
                 {"DocumentManager",Application.DocumentManager},
             };
+
+        public RPCTransport(int Port) {
+            this.Port = Port;
+        }
 
         public bool Send(ClientMessage message)
         {
@@ -58,11 +62,19 @@ namespace Draftsocket
 
         public Tuple<Dictionary<String, String>, String, List<String>> Receive2()
         {
-            var message = new byte[96];
+            //var message = new byte[96];
+            byte[] byteStream;
             //System.Text.Encoding.UTF8.GetBytes (myString)
-            var aaa = this.Client.ReceiveMessage();
+            var aaa = this.Client.ReceiveMessage(new TimeSpan(0,0,5));
             //int result = this.Client.Receive(message);
-            var byteStream = aaa.First.Buffer;
+            try
+            {
+                byteStream = aaa.First.Buffer;
+            }
+            catch
+            {
+                return new_message("whatever", "whatever", "whatever", "whatever");
+            }
             var serializer = MessagePackSerializer.Get<Tuple<Dictionary<String, String>, String, List<String>>>();
             var reply = serializer.UnpackSingleObject(byteStream);
             return reply;
@@ -79,38 +91,40 @@ namespace Draftsocket
             return bytes;
         }
 
-        public void CommandLoop(ISession Session, ClientMessage Message)
+        public Tuple<Dictionary<String, String>, String, List<String>> new_message(
+            string id,
+            string method,
+            string header,
+            params object[] parameters)
+        {
+            List<object> list = new List<object>(parameters);
+            List<string> stringList = list.ConvertAll(obj => obj.ToString());
+            Tuple<Dictionary<String, String>, String, List<String>> retval = new Tuple<Dictionary<string, string>, string, List<string>>(
+                           new Dictionary<string, string>()
+                            {
+                                {"message_id", id},
+                                {"method", method},
+                            },
+                            header,
+                            stringList
+                );
+            return retval;
+        }
+
+
+        public void CommandLoop(Tuple<Dictionary<String, String>, String, List<String>> msg)
         {
             //ServerMessage Reply = GeneralProtocol.NewReply();
             using (ZmqContext context = ZmqContext.Create())
             using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
             {
                 this.Client = client;
-                this.Send(Message);
 
+                this.Send2(msg);
                 do
                 {
-
-                    if (GeneralProtocol.CheckForExit(Message))
-                    {
-                        if (GeneralProtocol.CheckForError(Message))
-                            Session.Alert(Message.GetPayloadAsString());
-                        break;
-                    }
-
                     var Reply = this.Receive2();
 
-                    //introspection should begin here
-
-                    //Execute command,
-                    //Send reply,
-                    //Check if time to exit (either non-parsable message or "EXIT" received)
-                    
-                    //Message = Session.DispatchReply(Reply);
-                    //Type myType = Type.GetType("Autodesk.AutoCAD.ApplicationServices.Application");
-                    //MemberInfo[] foo = typeof(Application).GetMember("DocumentManager");
-
-                    //GET
                     if(Reply.Item1["method"] == "GET")
                     {
                         var parentObject = Names[Reply.Item1["namespace"]];
@@ -120,14 +134,11 @@ namespace Draftsocket
                         //CurrentObjects.Add(currentguid, obj);
                         Names.Add(currentguid.ToString(), obj);
                         //Command executed. build new message. and put object GUID in Item2
-                        var outgoing_message = new Tuple<Dictionary<string, string>, string, List<string>>(
-                            new Dictionary<string, string>()
-                            {
-                                {"message_id", Reply.Item1["message_id"]},
-                                {"method", "GET"},
-                            },
+                        var outgoing_message = this.new_message(
+                            Reply.Item1["message_id"],
+                            "GET",
                             currentguid.ToString(),
-                            new List<string>() { "none" }
+                            "none"
                             );
                         var result = this.Send2(outgoing_message);
                     }
@@ -139,16 +150,40 @@ namespace Draftsocket
                         MethodInfo m = parentObject.GetType().GetMethod(method, new Type[] {typeof(string)});
                         object result = m.Invoke(parentObject, new object[] {parameter});
 
+                        var outgoing_message = this.new_message(
+                            Reply.Item1["message_id"],
+                            "INVOKE",
+                            method,
+                            "none"
+                            );
+                        var msg_result = this.Send2(outgoing_message);
+
                     }
-
-
-                    //var aaaa = foo.GetValue(Application);
-                    //var aas = Application.DocumentManager.MdiActiveDocument;
+                    if (Reply.Item1["method"] == "END")
+                    {
+                        break;
+                    }
+                    if (Reply.Item1["method"] == "whatever")
+                    {
+                        break;
+                    }
 
 
                 } while (true);
             }
         }
+
+        public void CommandLoopOnce(Tuple<Dictionary<String, String>, String, List<String>> message)
+        {
+            using (ZmqContext context = ZmqContext.Create())
+            using (ZmqSocket client = context.CreateSocket(SocketType.REQ))
+            {
+                this.Client = client;
+                this.Send2(message);
+                var Reply = this.Receive2();
+            }
+        }
+
 
 
         public static object FollowPropertyPath(object value, string path)
