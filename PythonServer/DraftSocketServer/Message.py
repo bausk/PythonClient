@@ -16,6 +16,7 @@ class Message(object):
         self.Status = Protocol.Status.TERMINATE
 
     def Serialize(self):
+
         return simplejson.dumps(self.__dict__)
 
     def SetPayloadList(self, value):
